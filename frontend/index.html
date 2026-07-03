@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Amnesia — live session</title>
+<style>
+  :root {
+    --bg: #0a0b0f;
+    --panel: #12141c;
+    --border: #23262f;
+    --text: #e6e6ea;
+    --muted: #7d8190;
+    --accent: #00e5ff;
+    --warn: #ff5d5d;
+    --good: #4ade80;
+    --mono: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    margin: 0;
+    padding: 24px;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 20px;
+  }
+  h1 { font-size: 15px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin: 0 0 16px; }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  #controls { grid-column: 1 / -1; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  select, input[type=text], button {
+    background: #1a1d27; color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px 12px; font-family: var(--mono); font-size: 13px;
+  }
+  button { cursor: pointer; color: var(--accent); border-color: var(--accent); }
+  button:hover { background: rgba(0,229,255,0.08); }
+  #map-wrap { position: relative; }
+  #map { width: 100%; height: 420px; display: block; background: #0d0f16; border-radius: 6px; }
+  #metrics { display: flex; gap: 24px; margin-top: 12px; font-size: 13px; }
+  .metric-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .metric-value { color: var(--accent); font-size: 20px; font-weight: 500; }
+  #log { height: 260px; overflow-y: auto; font-size: 12px; line-height: 1.6; }
+  .log-line { padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .thought { color: var(--accent); }
+  .action { color: var(--muted); padding-left: 12px; }
+  .correction { color: var(--warn); }
+  .success { color: var(--good); }
+  #narration { min-height: 40px; font-size: 14px; color: var(--accent); padding: 8px 0; border-top: 1px solid var(--border); margin-top: 8px; }
+  #ask-box { display: flex; gap: 8px; margin-top: 16px; }
+  #ask-box input { flex: 1; }
+  #ask-answer { margin-top: 10px; font-size: 13px; color: var(--muted); white-space: pre-wrap; }
+</style>
+</head>
+<body>
+  <div id="controls" class="panel">
+    <select id="task">
+      <option value="make_coffee">make_coffee</option>
+      <option value="make_tea">make_tea</option>
+      <option value="find_keys">find_keys</option>
+    </select>
+    <select id="mode">
+      <option value="cold">session 1 — cold start</option>
+      <option value="memory">session 2 — with memory</option>
+      <option value="drift">session 3 — world drift</option>
+    </select>
+    <button onclick="startSession()">Run session</button>
+    <span id="status" style="color: var(--muted); font-size: 12px;"></span>
+  </div>
+
+  <div class="panel">
+    <h1>Live map</h1>
+    <div id="map-wrap"><svg id="map" viewBox="0 0 400 400"></svg></div>
+    <div id="metrics">
+      <div><div class="metric-label">Actions</div><div class="metric-value" id="m-actions">0</div></div>
+      <div><div class="metric-label">Recall hits</div><div class="metric-value" id="m-recalls">0</div></div>
+      <div><div class="metric-label">Corrections</div><div class="metric-value" id="m-corrections">0</div></div>
+    </div>
+    <div id="narration">Agent's thoughts will appear here as it works...</div>
+    <div id="ask-box">
+      <input type="text" id="ask-input" placeholder="Ask the house: where's the mug?">
+      <button onclick="askHouse()">Ask</button>
+    </div>
+    <div id="ask-answer"></div>
+  </div>
+
+  <div class="panel">
+    <h1>Event log</h1>
+    <div id="log"></div>
+  </div>
+
+<script>
+// Room layout mirrors house_sim/scenarios.py — update both together if the house changes.
+const ROOM_POS = {
+  hallway:     { x: 180, y: 180, w: 60,  h: 60 },
+  kitchen:     { x: 40,  y: 40,  w: 140, h: 100 },
+  living_room: { x: 40,  y: 260, w: 140, h: 100 },
+  bedroom:     { x: 260, y: 40,  w: 100, h: 100 },
+};
+
+let ws = null;
+let actionCount = 0, recallCount = 0, correctionCount = 0;
+
+function drawMap(currentRoom) {
+  const svg = document.getElementById("map");
+  svg.innerHTML = "";
+  for (const [name, r] of Object.entries(ROOM_POS)) {
+    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rect.setAttribute("x", r.x); rect.setAttribute("y", r.y);
+    rect.setAttribute("width", r.w); rect.setAttribute("height", r.h);
+    rect.setAttribute("rx", 6);
+    rect.setAttribute("fill", name === currentRoom ? "rgba(0,229,255,0.12)" : "#151822");
+    rect.setAttribute("stroke", name === currentRoom ? "#00e5ff" : "#23262f");
+    rect.setAttribute("stroke-width", name === currentRoom ? 2 : 1);
+    svg.appendChild(rect);
+
+    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    label.setAttribute("x", r.x + 8); label.setAttribute("y", r.y + 18);
+    label.setAttribute("fill", "#7d8190"); label.setAttribute("font-size", "11");
+    label.textContent = name;
+    svg.appendChild(label);
+
+    if (name === currentRoom) {
+      const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      dot.setAttribute("cx", r.x + r.w / 2); dot.setAttribute("cy", r.y + r.h / 2);
+      dot.setAttribute("r", 8); dot.setAttribute("fill", "#00e5ff");
+      svg.appendChild(dot);
+    }
+  }
+}
+
+function logLine(text, cls) {
+  const log = document.getElementById("log");
+  const div = document.createElement("div");
+  div.className = "log-line " + (cls || "");
+  div.textContent = text;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+function resetMetrics() {
+  actionCount = 0; recallCount = 0; correctionCount = 0;
+  document.getElementById("m-actions").textContent = "0";
+  document.getElementById("m-recalls").textContent = "0";
+  document.getElementById("m-corrections").textContent = "0";
+  document.getElementById("log").innerHTML = "";
+}
+
+function startSession() {
+  resetMetrics();
+  const task = document.getElementById("task").value;
+  const mode = document.getElementById("mode").value;
+  const status = document.getElementById("status");
+  status.textContent = "connecting...";
+
+  ws = new WebSocket(`ws://${location.hostname}:8060/ws/session`);
+  ws.onopen = () => {
+    status.textContent = "running";
+    ws.send(JSON.stringify({ task, mode, use_llm: mode !== "fallback" }));
+  };
+  ws.onmessage = (e) => {
+    const event = JSON.parse(e.data);
+    handleEvent(event);
+  };
+  ws.onclose = () => { status.textContent = "disconnected"; };
+  ws.onerror = () => { status.textContent = "error — is the server running on :8060?"; };
+}
+
+function handleEvent(event) {
+  if (event.type === "perceive") {
+    drawMap(event.room);
+  } else if (event.type === "recall") {
+    recallCount++;
+    document.getElementById("m-recalls").textContent = recallCount;
+  } else if (event.type === "plan") {
+    document.getElementById("narration").textContent = event.action.thought;
+    logLine(`"${event.action.thought}" → ${event.action.type} ${event.action.target || ""}`, "thought");
+  } else if (event.type === "act") {
+    actionCount++;
+    document.getElementById("m-actions").textContent = actionCount;
+    logLine(`  ${event.result.message}`, "action");
+  } else if (event.type === "memory_correction") {
+    correctionCount++;
+    document.getElementById("m-corrections").textContent = correctionCount;
+    logLine(`!! memory correction: ${event.reason}`, "correction");
+  } else if (event.type === "task_success") {
+    logLine(`task completed`, "success");
+  } else if (event.type === "session_end") {
+    document.getElementById("status").textContent =
+      `done — ${event.steps_taken} actions, completed=${event.completed}`;
+  }
+}
+
+async function askHouse() {
+  const query = document.getElementById("ask-input").value;
+  if (!query) return;
+  const res = await fetch("http://" + location.hostname + ":8060/ask", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query }),
+  });
+  const data = await res.json();
+  document.getElementById("ask-answer").textContent = data.answer;
+}
+
+drawMap("hallway");
+</script>
+</body>
+</html>

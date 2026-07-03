@@ -1,0 +1,9 @@
+cognee
+langgraph
+langchain-core
+groq
+fastapi
+uvicorn[standard]
+pydantic
+python-dotenv
+websockets
