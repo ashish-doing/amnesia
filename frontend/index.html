@@ -3,56 +3,63 @@
 <head>
 <meta charset="UTF-8">
 <title>Amnesia — live session</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <style>
   :root {
-    --bg: #0a0b0f;
-    --panel: #12141c;
-    --border: #23262f;
-    --text: #e6e6ea;
-    --muted: #7d8190;
-    --accent: #00e5ff;
-    --warn: #ff5d5d;
-    --good: #4ade80;
-    --mono: 'IBM Plex Mono', 'Courier New', monospace;
+    --bg: #08090f; --panel: #12141c; --panel-2: #171a24; --border: #23262f;
+    --text: #e6e6ea; --muted: #7d8190; --accent: #00e5ff; --accent-dim: rgba(0,229,255,0.12);
+    --warn: #ff6b6b; --good: #4ade80; --mono: 'IBM Plex Mono', 'Courier New', monospace;
   }
   * { box-sizing: border-box; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--mono);
-    margin: 0;
-    padding: 24px;
-    display: grid;
-    grid-template-columns: 1.2fr 1fr;
-    gap: 20px;
-  }
-  h1 { font-size: 15px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin: 0 0 16px; }
-  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
-  #controls { grid-column: 1 / -1; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-  select, input[type=text], button {
-    background: #1a1d27; color: var(--text); border: 1px solid var(--border);
-    border-radius: 6px; padding: 8px 12px; font-family: var(--mono); font-size: 13px;
-  }
-  button { cursor: pointer; color: var(--accent); border-color: var(--accent); }
-  button:hover { background: rgba(0,229,255,0.08); }
-  #map-wrap { position: relative; }
-  #map { width: 100%; height: 420px; display: block; background: #0d0f16; border-radius: 6px; }
-  #metrics { display: flex; gap: 24px; margin-top: 12px; font-size: 13px; }
-  .metric-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
-  .metric-value { color: var(--accent); font-size: 20px; font-weight: 500; }
-  #log { height: 260px; overflow-y: auto; font-size: 12px; line-height: 1.6; }
-  .log-line { padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  body { background: var(--bg); color: var(--text); font-family: var(--mono); margin: 0; padding: 28px 32px; }
+  h1 { font-size: 13px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 14px; }
+  .brand { display: flex; align-items: baseline; gap: 10px; margin-bottom: 22px; }
+  .brand .name { font-size: 17px; font-weight: 600; color: var(--text); }
+  .brand .tag { font-size: 11px; color: var(--muted); }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+  #controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
+  select, input[type=text], button { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 9px 13px; font-family: var(--mono); font-size: 12.5px; }
+  button { cursor: pointer; color: var(--accent); border-color: rgba(0,229,255,0.35); font-weight: 500; }
+  button:hover { background: var(--accent-dim); }
+  #status-pill { font-size: 11px; padding: 5px 11px; border-radius: 999px; background: var(--panel-2); color: var(--muted); border: 1px solid var(--border); }
+  #status-pill.live { color: var(--good); border-color: rgba(74,222,128,0.35); }
+  #status-pill.err { color: var(--warn); border-color: rgba(255,107,107,0.35); }
+  .grid { display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 18px; margin-bottom: 18px; }
+  #map { width: 100%; height: 260px; display: block; background: #0b0d14; border-radius: 8px; }
+  .icon { fill: none; stroke: var(--muted); stroke-width: 1.6; }
+  #inventory { display: flex; gap: 8px; margin-top: 10px; min-height: 26px; align-items: center; flex-wrap: wrap; }
+  .inv-chip { font-size: 11px; padding: 4px 10px; border-radius: 999px; background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(0,229,255,0.3); }
+  .inv-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-right: 4px; }
+  #metrics { display: flex; gap: 24px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .metric-label { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .metric-value { color: var(--accent); font-size: 20px; font-weight: 600; margin-top: 2px; }
+  #log { height: 300px; overflow-y: auto; font-size: 11px; line-height: 1.6; }
+  .log-line { padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
   .thought { color: var(--accent); }
-  .action { color: var(--muted); padding-left: 12px; }
+  .action { color: var(--muted); padding-left: 14px; }
+  .recall-block { color: #b78cff; padding: 4px 0 4px 14px; white-space: pre-wrap; font-size: 10.5px; border-left: 2px solid rgba(183,140,255,0.3); margin: 2px 0; }
   .correction { color: var(--warn); }
-  .success { color: var(--good); }
-  #narration { min-height: 40px; font-size: 14px; color: var(--accent); padding: 8px 0; border-top: 1px solid var(--border); margin-top: 8px; }
-  #ask-box { display: flex; gap: 8px; margin-top: 16px; }
-  #ask-box input { flex: 1; }
-  #ask-answer { margin-top: 10px; font-size: 13px; color: var(--muted); white-space: pre-wrap; }
+  .success { color: var(--good); font-weight: 500; }
+  #ask-row { display: flex; gap: 8px; margin-top: 14px; }
+  #ask-row input { flex: 1; }
+  #ask-answer { margin-top: 8px; font-size: 11.5px; color: var(--muted); white-space: pre-wrap; min-height: 16px; }
+  #compare-title, #graph-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
+  #graph-title .count { color: var(--accent); font-weight: 600; }
+  #compare-chart { display: flex; align-items: flex-end; gap: 24px; height: 140px; padding: 0 6px; }
+  .bar-col { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; height: 100%; justify-content: flex-end; }
+  .bar { width: 100%; max-width: 64px; border-radius: 6px 6px 0 0; background: var(--accent-dim); border: 1px solid rgba(0,229,255,0.35); transition: height 0.5s ease; position: relative; }
+  .bar.cold { background: rgba(255,107,107,0.12); border-color: rgba(255,107,107,0.35); }
+  .bar-count { position: absolute; top: -22px; left: 0; right: 0; text-align: center; font-size: 13px; font-weight: 600; color: var(--text); }
+  .bar-label { font-size: 10.5px; color: var(--muted); text-align: center; }
+  #compare-empty, #graph-empty { color: var(--muted); font-size: 12px; text-align: center; padding: 40px 0; }
+  #graph-svg { width: 100%; height: 340px; }
+  .node-label { font-size: 8.5px; fill: var(--muted); pointer-events: none; }
+  .bottom-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 18px; }
 </style>
 </head>
 <body>
+  <div class="brand"><span class="name">Amnesia</span><span class="tag">live session — Cognee memory lifecycle</span></div>
+
   <div id="controls" class="panel">
     <select id="task">
       <option value="make_coffee">make_coffee</option>
@@ -60,73 +67,127 @@
       <option value="find_keys">find_keys</option>
     </select>
     <select id="mode">
-      <option value="cold">session 1 — cold start</option>
-      <option value="memory">session 2 — with memory</option>
-      <option value="drift">session 3 — world drift</option>
+      <option value="cold">session — cold start</option>
+      <option value="memory">session — with memory</option>
+      <option value="drift">session — world drift</option>
     </select>
     <button onclick="startSession()">Run session</button>
-    <span id="status" style="color: var(--muted); font-size: 12px;"></span>
+    <span id="status-pill">idle</span>
   </div>
 
-  <div class="panel">
-    <h1>Live map</h1>
-    <div id="map-wrap"><svg id="map" viewBox="0 0 400 400"></svg></div>
-    <div id="metrics">
-      <div><div class="metric-label">Actions</div><div class="metric-value" id="m-actions">0</div></div>
-      <div><div class="metric-label">Recall hits</div><div class="metric-value" id="m-recalls">0</div></div>
-      <div><div class="metric-label">Corrections</div><div class="metric-value" id="m-corrections">0</div></div>
+  <div class="grid">
+    <div class="panel">
+      <h1>Agent position</h1>
+      <svg id="map" viewBox="0 0 400 260"></svg>
+      <div id="inventory"><span class="inv-label">carrying</span></div>
+      <div id="metrics">
+        <div><div class="metric-label">Actions</div><div class="metric-value" id="m-actions">0</div></div>
+        <div><div class="metric-label">Recall calls</div><div class="metric-value" id="m-recalls">0</div></div>
+        <div><div class="metric-label">Corrections</div><div class="metric-value" id="m-corrections">0</div></div>
+      </div>
+      <div id="ask-row">
+        <input type="text" id="ask-input" placeholder="Ask the house: where's the mug?">
+        <button onclick="askHouse()">Ask</button>
+      </div>
+      <div id="ask-answer"></div>
     </div>
-    <div id="narration">Agent's thoughts will appear here as it works...</div>
-    <div id="ask-box">
-      <input type="text" id="ask-input" placeholder="Ask the house: where's the mug?">
-      <button onclick="askHouse()">Ask</button>
+
+    <div class="panel">
+      <h1>Live reasoning + real Cognee output</h1>
+      <div id="log"></div>
     </div>
-    <div id="ask-answer"></div>
   </div>
 
-  <div class="panel">
-    <h1>Event log</h1>
-    <div id="log"></div>
+  <div class="bottom-grid">
+    <div class="panel">
+      <div id="compare-title">Session comparison — actions to complete the task</div>
+      <div id="compare-chart"><div id="compare-empty">Run a few sessions to see the memory effect appear here.</div></div>
+    </div>
+
+    <div class="panel">
+      <div id="graph-title">Cognee memory graph — actual remembered facts <span class="count" id="graph-count"></span></div>
+      <svg id="graph-svg"></svg>
+      <div id="graph-empty">Run a session — every fact your agent writes to Cognee appears here as a real node, pulled live from the confidence store on disk.</div>
+    </div>
   </div>
 
 <script>
-// Room layout mirrors house_sim/scenarios.py — update both together if the house changes.
 const ROOM_POS = {
-  hallway:     { x: 180, y: 180, w: 60,  h: 60 },
-  kitchen:     { x: 40,  y: 40,  w: 140, h: 100 },
-  living_room: { x: 40,  y: 260, w: 140, h: 100 },
-  bedroom:     { x: 260, y: 40,  w: 100, h: 100 },
+  hallway:     { x: 170, y: 90,  w: 60,  h: 60,  icon: "door" },
+  kitchen:     { x: 30,  y: 10,  w: 150, h: 70,  icon: "kitchen" },
+  living_room: { x: 30,  y: 170, w: 150, h: 70,  icon: "sofa" },
+  bedroom:     { x: 250, y: 10,  w: 110, h: 70,  icon: "bed" },
+};
+const ICONS = {
+  kitchen: '<path class="icon" d="M6 2v6a3 3 0 0 0 3 3v9M6 2a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2M6 2v11M14 2v18M14 2a3 3 0 0 1 3 3v4a3 3 0 0 1-3 3"/>',
+  sofa: '<path class="icon" d="M3 10v6a1 1 0 0 0 1 1h1v2h2v-2h10v2h2v-2h1a1 1 0 0 0 1-1v-6M6 8h12a2 2 0 0 1 2 2v5H4v-5a2 2 0 0 1 2-2z"/>',
+  bed: '<path class="icon" d="M3 18v-7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v7M3 18v2M3 18h18M21 18v2M6 9V6a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v3M13 9V6a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v3"/>',
+  door: '<path class="icon" d="M5 21V4a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v17M5 21h13M5 21H3M18 21h2M14 12v.01"/>',
 };
 
 let ws = null;
 let actionCount = 0, recallCount = 0, correctionCount = 0;
+let inventory = [];
+let sessionHistory = [];
+let mapDrawn = false;
 
-function drawMap(currentRoom) {
+function drawRooms() {
   const svg = document.getElementById("map");
   svg.innerHTML = "";
   for (const [name, r] of Object.entries(ROOM_POS)) {
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("data-room", name);
     const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     rect.setAttribute("x", r.x); rect.setAttribute("y", r.y);
     rect.setAttribute("width", r.w); rect.setAttribute("height", r.h);
-    rect.setAttribute("rx", 6);
-    rect.setAttribute("fill", name === currentRoom ? "rgba(0,229,255,0.12)" : "#151822");
-    rect.setAttribute("stroke", name === currentRoom ? "#00e5ff" : "#23262f");
-    rect.setAttribute("stroke-width", name === currentRoom ? 2 : 1);
-    svg.appendChild(rect);
-
+    rect.setAttribute("rx", 8); rect.setAttribute("fill", "#151822");
+    rect.setAttribute("stroke", "#23262f"); rect.setAttribute("stroke-width", 1);
+    rect.style.transition = "fill 0.4s ease, stroke 0.4s ease";
+    g.appendChild(rect);
+    const iconWrap = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    iconWrap.setAttribute("transform", "translate(" + (r.x + r.w/2 - 10) + ", " + (r.y + 6) + ") scale(0.85)");
+    iconWrap.setAttribute("opacity", "0.55");
+    iconWrap.innerHTML = ICONS[r.icon];
+    g.appendChild(iconWrap);
     const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    label.setAttribute("x", r.x + 8); label.setAttribute("y", r.y + 18);
-    label.setAttribute("fill", "#7d8190"); label.setAttribute("font-size", "11");
-    label.textContent = name;
-    svg.appendChild(label);
-
-    if (name === currentRoom) {
-      const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-      dot.setAttribute("cx", r.x + r.w / 2); dot.setAttribute("cy", r.y + r.h / 2);
-      dot.setAttribute("r", 8); dot.setAttribute("fill", "#00e5ff");
-      svg.appendChild(dot);
-    }
+    label.setAttribute("x", r.x + r.w / 2); label.setAttribute("y", r.y + r.h - 8);
+    label.setAttribute("fill", "#7d8190"); label.setAttribute("font-size", "10");
+    label.setAttribute("text-anchor", "middle");
+    label.textContent = name.replace("_", " ");
+    g.appendChild(label);
+    svg.appendChild(g);
   }
+  const agent = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  agent.setAttribute("id", "agent-dot"); agent.setAttribute("r", 8); agent.setAttribute("fill", "#00e5ff");
+  agent.style.transition = "cx 0.6s cubic-bezier(0.4,0,0.2,1), cy 0.6s cubic-bezier(0.4,0,0.2,1)";
+  const start = ROOM_POS.hallway;
+  agent.setAttribute("cx", start.x + start.w / 2); agent.setAttribute("cy", start.y + start.h / 2);
+  svg.appendChild(agent);
+  mapDrawn = true;
+}
+
+function moveAgentTo(roomName) {
+  if (!mapDrawn) drawRooms();
+  document.querySelectorAll("g[data-room] rect").forEach(function(rect) {
+    const isActive = rect.parentElement.getAttribute("data-room") === roomName;
+    rect.setAttribute("fill", isActive ? "rgba(0,229,255,0.10)" : "#151822");
+    rect.setAttribute("stroke", isActive ? "#00e5ff" : "#23262f");
+    rect.setAttribute("stroke-width", isActive ? 2 : 1);
+  });
+  const r = ROOM_POS[roomName];
+  const agent = document.getElementById("agent-dot");
+  if (r && agent) { agent.setAttribute("cx", r.x + r.w / 2); agent.setAttribute("cy", r.y + r.h / 2); }
+}
+
+function updateInventory() {
+  const wrap = document.getElementById("inventory");
+  wrap.innerHTML = '<span class="inv-label">carrying</span>';
+  if (inventory.length === 0) wrap.innerHTML += '<span style="color:var(--muted); font-size:11px;">nothing yet</span>';
+  inventory.forEach(function(item) {
+    const chip = document.createElement("span");
+    chip.className = "inv-chip"; chip.textContent = item;
+    wrap.appendChild(chip);
+  });
 }
 
 function logLine(text, cls) {
@@ -139,71 +200,160 @@ function logLine(text, cls) {
 }
 
 function resetMetrics() {
-  actionCount = 0; recallCount = 0; correctionCount = 0;
+  actionCount = 0; recallCount = 0; correctionCount = 0; inventory = [];
   document.getElementById("m-actions").textContent = "0";
   document.getElementById("m-recalls").textContent = "0";
   document.getElementById("m-corrections").textContent = "0";
   document.getElementById("log").innerHTML = "";
+  updateInventory();
+}
+
+function setStatus(text, kind) {
+  const pill = document.getElementById("status-pill");
+  pill.textContent = text; pill.className = kind ? kind : "";
 }
 
 function startSession() {
   resetMetrics();
   const task = document.getElementById("task").value;
   const mode = document.getElementById("mode").value;
-  const status = document.getElementById("status");
-  status.textContent = "connecting...";
-
-  ws = new WebSocket(`ws://${location.hostname}:8060/ws/session`);
-  ws.onopen = () => {
-    status.textContent = "running";
-    ws.send(JSON.stringify({ task, mode, use_llm: mode !== "fallback" }));
+  setStatus("connecting", "");
+  ws = new WebSocket("ws://" + (location.hostname || "localhost") + ":8060/ws/session");
+  ws.onopen = function() {
+    setStatus("running", "live");
+    ws.send(JSON.stringify({ task: task, mode: mode, use_llm: true }));
   };
-  ws.onmessage = (e) => {
-    const event = JSON.parse(e.data);
-    handleEvent(event);
-  };
-  ws.onclose = () => { status.textContent = "disconnected"; };
-  ws.onerror = () => { status.textContent = "error — is the server running on :8060?"; };
+  ws.onmessage = function(e) { handleEvent(JSON.parse(e.data)); };
+  ws.onclose = function() { if (document.getElementById("status-pill").textContent === "running") setStatus("disconnected", ""); };
+  ws.onerror = function() { setStatus("error - is the server running on :8060?", "err"); };
 }
 
 function handleEvent(event) {
   if (event.type === "perceive") {
-    drawMap(event.room);
+    moveAgentTo(event.room);
   } else if (event.type === "recall") {
     recallCount++;
     document.getElementById("m-recalls").textContent = recallCount;
+    logLine("[cognee recall] query: " + event.query + "\n" + event.result, "recall-block");
   } else if (event.type === "plan") {
-    document.getElementById("narration").textContent = event.action.thought;
-    logLine(`"${event.action.thought}" → ${event.action.type} ${event.action.target || ""}`, "thought");
+    logLine('"' + event.action.thought + '" -> ' + event.action.type + ' ' + (event.action.target || ""), "thought");
   } else if (event.type === "act") {
     actionCount++;
     document.getElementById("m-actions").textContent = actionCount;
-    logLine(`  ${event.result.message}`, "action");
+    logLine("  " + event.result.message, "action");
+    if (event.action.type === "pick" && event.result.success) { inventory.push(event.action.target); updateInventory(); }
+    if (event.action.type === "place" || event.action.type === "use") updateInventory();
   } else if (event.type === "memory_correction") {
     correctionCount++;
     document.getElementById("m-corrections").textContent = correctionCount;
-    logLine(`!! memory correction: ${event.reason}`, "correction");
+    logLine("memory correction: " + event.reason, "correction");
   } else if (event.type === "task_success") {
-    logLine(`task completed`, "success");
+    logLine("task completed", "success");
+  } else if (event.type === "session_remembered") {
+    logLine("[cognee remember] wrote " + event.observation_count + " observations - fetching updated graph...", "action");
   } else if (event.type === "session_end") {
-    document.getElementById("status").textContent =
-      `done — ${event.steps_taken} actions, completed=${event.completed}`;
+    setStatus("done - " + event.steps_taken + " actions", "live");
+    recordSession(event.steps_taken, document.getElementById("mode").value);
+    fetchMemoryGraph();
   }
+}
+
+function recordSession(steps, mode) {
+  sessionHistory.push({ steps: steps, mode: mode, n: sessionHistory.length + 1 });
+  renderCompareChart();
+}
+
+function renderCompareChart() {
+  const chart = document.getElementById("compare-chart");
+  chart.innerHTML = "";
+  const maxSteps = Math.max.apply(null, sessionHistory.map(function(s) { return s.steps; }).concat([1]));
+  sessionHistory.forEach(function(s) {
+    const col = document.createElement("div");
+    col.className = "bar-col";
+    const barHeight = Math.max(18, (s.steps / maxSteps) * 100);
+    col.innerHTML = '<div class="bar ' + (s.mode === "cold" ? "cold" : "") + '" style="height:' + barHeight + 'px;">' +
+      '<div class="bar-count">' + s.steps + '</div></div>' +
+      '<div class="bar-label">session ' + s.n + '<br>' + s.mode + '</div>';
+    chart.appendChild(col);
+  });
+}
+
+async function fetchMemoryGraph() {
+  try {
+    const res = await fetch("http://" + (location.hostname || "localhost") + ":8060/memory/graph");
+    const data = await res.json();
+    renderMemoryGraph(data.nodes);
+  } catch (e) {
+    console.error("memory graph fetch failed", e);
+  }
+}
+
+function renderMemoryGraph(nodes) {
+  const svgEl = document.getElementById("graph-svg");
+  const empty = document.getElementById("graph-empty");
+  const countEl = document.getElementById("graph-count");
+  if (!nodes || nodes.length === 0) {
+    empty.style.display = "block"; svgEl.innerHTML = ""; countEl.textContent = "";
+    return;
+  }
+  empty.style.display = "none";
+  countEl.textContent = nodes.length + " nodes";
+
+  const width = svgEl.clientWidth || 600, height = 340;
+  const links = [];
+  for (let i = 1; i < nodes.length; i++) {
+    links.push({ source: nodes[i - 1].id, target: nodes[i].id });
+  }
+
+  const svg = d3.select("#graph-svg").attr("viewBox", "0 0 " + width + " " + height);
+  svg.selectAll("*").remove();
+
+  const sim = d3.forceSimulation(nodes)
+    .force("link", d3.forceLink(links).id(function(d) { return d.id; }).distance(70))
+    .force("charge", d3.forceManyBody().strength(-90))
+    .force("center", d3.forceCenter(width / 2, height / 2))
+    .force("collide", d3.forceCollide(30));
+
+  const link = svg.append("g").selectAll("line").data(links).enter().append("line")
+    .attr("stroke", "#23262f").attr("stroke-width", 1);
+
+  const node = svg.append("g").selectAll("circle").data(nodes).enter().append("circle")
+    .attr("r", 7)
+    .attr("fill", function(d) { return d.confidence >= 0.6 ? "#00e5ff" : (d.confidence >= 0.35 ? "#ffb454" : "#ff6b6b"); })
+    .attr("stroke", "#08090f").attr("stroke-width", 1.5);
+
+  node.append("title").text(function(d) { return d.text; });
+
+  const label = svg.append("g").selectAll("text").data(nodes).enter().append("text")
+    .attr("class", "node-label")
+    .text(function(d) { return d.text.slice(0, 28) + (d.text.length > 28 ? "..." : ""); });
+
+  sim.on("tick", function() {
+    link.attr("x1", function(d) { return d.source.x; }).attr("y1", function(d) { return d.source.y; })
+        .attr("x2", function(d) { return d.target.x; }).attr("y2", function(d) { return d.target.y; });
+    node.attr("cx", function(d) { return d.x; }).attr("cy", function(d) { return d.y; });
+    label.attr("x", function(d) { return d.x + 10; }).attr("y", function(d) { return d.y + 3; });
+  });
 }
 
 async function askHouse() {
   const query = document.getElementById("ask-input").value;
   if (!query) return;
-  const res = await fetch("http://" + location.hostname + ":8060/ask", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query }),
-  });
-  const data = await res.json();
-  document.getElementById("ask-answer").textContent = data.answer;
+  document.getElementById("ask-answer").textContent = "asking...";
+  try {
+    const res = await fetch("http://" + (location.hostname || "localhost") + ":8060/ask", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: query }),
+    });
+    const data = await res.json();
+    document.getElementById("ask-answer").textContent = data.answer;
+  } catch (e) {
+    document.getElementById("ask-answer").textContent = "couldn't reach the server on :8060";
+  }
 }
 
-drawMap("hallway");
+drawRooms();
+updateInventory();
+fetchMemoryGraph();
 </script>
 </body>
 </html>

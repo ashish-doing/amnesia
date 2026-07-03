@@ -17,6 +17,7 @@ from house_sim.scenarios import build_house, apply_standard_drift, TASKS
 from agent.graph import run_session
 from memory import memory_ops
 from memory.cognee_config import configure
+import json as _json
 
 app = FastAPI(title="Amnesia")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -39,6 +40,23 @@ async def startup():
 @app.get("/")
 def health():
     return {"status": "ok", "service": "amnesia"}
+
+
+@app.get("/memory/graph")
+async def memory_graph():
+    """Returns the ACTUAL contents of the confidence store - real facts the
+    agent has genuinely remembered, with real confidence scores, not mock
+    data. This is what the frontend's memory graph panel visualizes."""
+    if memory_ops.CONFIDENCE_STORE.exists():
+        store = _json.loads(memory_ops.CONFIDENCE_STORE.read_text())
+    else:
+        store = {}
+    nodes = [
+        {"id": fid, "text": meta["text"][:120], "confidence": meta["confidence"],
+         "session": meta.get("last_confirmed_session", 0)}
+        for fid, meta in store.items()
+    ]
+    return {"nodes": nodes, "count": len(nodes)}
 
 
 @app.post("/ask")
