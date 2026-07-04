@@ -280,9 +280,18 @@ async function runFullDemo() {
 }
 
 function handleEvent(event) {
-  if (event.type === "perceive") {
+  if (event.type === "house_reset") {
+    logLine("--- house reset: simulation state rebuilt from scratch ---", "correction");
+    inventory = [];
+    updateInventory();
+  } else if (event.type === "perceive") {
     moveAgentTo(event.room);
     renderRoomContents(event.visible_objects, event.connects_to);
+    // Sync inventory from the real backend ground truth every step, rather than
+    // only appending on "pick" events client-side - that approach silently drifted
+    // out of sync whenever an item was placed back down (place/use never removed it).
+    inventory = event.inventory || [];
+    updateInventory();
   } else if (event.type === "recall") {
     recallCount++;
     document.getElementById("m-recalls").textContent = recallCount;
@@ -299,8 +308,6 @@ function handleEvent(event) {
     actionCount++;
     document.getElementById("m-actions").textContent = actionCount;
     logLine("  " + event.result.message, "action");
-    if (event.action.type === "pick" && event.result.success) { inventory.push(event.action.target); updateInventory(); }
-    if (event.action.type === "place" || event.action.type === "use") updateInventory();
   } else if (event.type === "memory_correction") {
     correctionCount++;
     document.getElementById("m-corrections").textContent = correctionCount;

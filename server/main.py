@@ -2,11 +2,11 @@
 FastAPI backend. Two things a judge can do:
   1. Watch a session run live over the WebSocket (/ws/session).
   2. Type a question into the "ask the house" box (/ask) and get an answer
-     straight from recall() — this is the highest-impact-per-hour stretch
-     feature: it turns a demo into something judges can poke at themselves.
+     straight from recall() - this turns a demo into something judges can
+     poke at themselves.
 
 Run: uvicorn server.main:app --reload --port 8060
-(port 8060, not 8000 — keep clear of anything else already bound locally)
+(port 8060, not 8000 - keep clear of anything else already bound locally)
 """
 import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -22,7 +22,7 @@ import json as _json
 app = FastAPI(title="Amnesia")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-# One in-memory house persists across sessions for a given server process —
+# One in-memory house persists across sessions for a given server process -
 # this IS the point: the sim resets, Cognee's on-disk store does not.
 _house = None
 _session_counter = 0
@@ -61,7 +61,7 @@ async def memory_graph():
 
 @app.post("/ask")
 async def ask_the_house(req: AskRequest):
-    """Live judge-facing query box — answers straight from recall(), no agent loop."""
+    """Live judge-facing query box - answers straight from recall(), no agent loop."""
     answer = await memory_ops.recall_context(req.query, current_session=_session_counter)
     return {"query": req.query, "answer": answer}
 
@@ -70,17 +70,39 @@ async def ask_the_house(req: AskRequest):
 async def ws_session(websocket: WebSocket):
     """
     Client sends: {"task": "make_coffee", "mode": "cold" | "memory" | "drift", "use_llm": true}
-    Server streams: one JSON event per agent step (perceive/recall/plan/act/memory_correction/session_end).
+    Server streams: one JSON event per agent step, IN ORDER.
+
+    ORDERING FIX: an earlier version used asyncio.create_task(websocket.send_json(event))
+    inside a sync emit() callback - fire-and-forget, so under load multiple rapid
+    events could complete out of order (e.g. "act" arriving before "plan" for the
+    same step). Fixed here with a single-consumer queue: emit() only enqueues
+    (fast, non-blocking), and one dedicated consumer coroutine awaits send_json
+    sequentially, guaranteeing the browser sees events in the exact order the
+    agent produced them.
     """
     global _house, _session_counter
     await websocket.accept()
+
+    event_queue: asyncio.Queue = asyncio.Queue()
+    _STOP = object()
+
+    async def consumer():
+        while True:
+            event = await event_queue.get()
+            if event is _STOP:
+                break
+            await websocket.send_json(event)
+
+    consumer_task = asyncio.create_task(consumer())
+
     try:
         params = await websocket.receive_json()
         task_name = params.get("task", "make_coffee")
         mode = params.get("mode", "memory")
         use_llm = params.get("use_llm", True)
 
-        if mode == "cold" or _house is None:
+        house_was_reset = (mode == "cold" or _house is None)
+        if house_was_reset:
             _house = build_house()
         if mode == "drift":
             apply_standard_drift(_house)
@@ -88,14 +110,22 @@ async def ws_session(websocket: WebSocket):
         _session_counter += 1
 
         def emit(event: dict):
-            asyncio.create_task(websocket.send_json(event))
+            event_queue.put_nowait(event)
+
+        if house_was_reset:
+            emit({"type": "house_reset",
+                  "reason": "cold start - simulation state was rebuilt from scratch, "
+                             "any prior in-memory session progress is gone (Cognee's "
+                             "on-disk memory is unaffected)"})
 
         result = await run_session(_house, task_name, _session_counter, use_llm, emit=emit)
-        await websocket.send_json({"type": "final_result", **result})
+        emit({"type": "final_result", **result})
 
     except WebSocketDisconnect:
         pass
     finally:
+        await event_queue.put(_STOP)
+        await consumer_task
         try:
             await websocket.close()
         except Exception:

@@ -22,8 +22,15 @@ import json
 import os
 import time
 from pathlib import Path
-
-import cognee
+# `cognee` is imported lazily inside the functions that actually call it
+# (remember_observation, recall_context, forget_fact), not here at module
+# level. This is a deliberate fix, not an oversight: an earlier version
+# imported it unconditionally at the top, which meant the entire module -
+# including the pure, cognee-free confidence-tracking logic - couldn't even
+# be imported for testing without Cognee installed. That's the direct reason
+# this module had zero test coverage. tests/test_memory_ops.py now imports
+# this file and tests improve_from_outcome/_load_confidence/_save_confidence
+# with no Cognee dependency at all.
 from memory.cognee_config import configure
 
 CONFIDENCE_STORE = Path(__file__).parent / "confidence_store.json"
@@ -44,6 +51,7 @@ def _save_confidence(store: dict):
 async def remember_observation(text: str, fact_id: str | None = None, metadata: dict | None = None):
     """Ingest an observation into Cognee's knowledge graph, and (re)set its
     confidence to 1.0 since it was just directly observed."""
+    import cognee
     configure()
     await cognee.add(text)
     await cognee.cognify()
@@ -60,6 +68,7 @@ async def recall_context(query: str, current_session: int = 0) -> str:
     so the planner can decide how much to trust it. This is what makes session 2
     fast (real recall) and what makes the drift session (session 3) interesting
     (recall returns something that confidence-annotation flags as questionable)."""
+    import cognee
     configure()
     try:
         results = await cognee.search(query)
@@ -106,23 +115,36 @@ def improve_from_outcome(fact_id: str, was_correct: bool, session: int):
     _save_confidence(store)
 
 
-async def forget_fact(fact_id: str, reason: str):
+async def forget_fact(fact_id: str, reason: str) -> dict:
     """Surgically remove a stale/incorrect fact. Called specifically on the
-    drift-correction path in agent/graph.py, not as routine cleanup — this is
-    the call that proves the lifecycle is used for real, not just ingest+query."""
+    drift-correction path in agent/graph.py, not as routine cleanup - this is
+    the call that proves the lifecycle is used for real, not just ingest+query.
+
+    WHAT'S GUARANTEED: the local confidence-store entry is always removed -
+    this is what drives the memory graph's color coding and what the demo UI
+    shows. WHAT'S BEST-EFFORT: pruning the underlying Cognee graph node via
+    cognee.forget(). Cognee 1.2.2's own startup log advertises forget() as a
+    real top-level method ("New API - remember/recall/forget/improve"), so
+    this should work on the version this project targets - but earlier/other
+    installs may not expose it, so failure here is caught and reported, not
+    silently swallowed. Returns a dict so callers/tests can assert on which
+    path actually happened, instead of just trusting a print statement."""
+    import cognee
     configure()
     store = _load_confidence()
+    outcome = {"local_removed": False, "graph_pruned": False, "error": None}
+    forgotten_text = None
     if fact_id in store:
-        text = store[fact_id]["text"]
+        forgotten_text = store[fact_id]["text"]
         del store[fact_id]
         _save_confidence(store)
-        # Best-effort: if your Cognee version exposes a direct delete/forget call,
-        # invoke it here too so the underlying graph node is actually pruned, not
-        # just locally distrusted. Check the exact signature in the docs — this
-        # is the one call most likely to differ across versions.
-        try:
-            await cognee.forget(text)  # type: ignore[attr-defined]
-        except AttributeError:
-            print(f"[memory_ops] cognee.forget() not available in this version — "
-                  f"confidence for '{fact_id}' zeroed locally, but graph node may persist. "
-                  f"Reason: {reason}")
+        outcome["local_removed"] = True
+    try:
+        await cognee.forget(forgotten_text or fact_id)
+        outcome["graph_pruned"] = True
+    except Exception as e:
+        outcome["error"] = str(e)
+        print(f"[memory_ops] WARNING: cognee.forget() failed for '{fact_id}' - "
+              f"local confidence removed, but the underlying graph node may persist. "
+              f"Reason for correction: {reason}. Error: {e}")
+    return outcome

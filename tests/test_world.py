@@ -25,9 +25,7 @@ def test_move_valid():
 
 def test_move_invalid():
     house = build_house()
-    result = house.move("bedroom")  # not directly connected to hallway... wait it is
-    # hallway connects to bedroom directly in this layout, so use an unreachable one:
-    result = house.move("nowhere")
+    result = house.move("nowhere")  # a room name that doesn't exist at all
     assert not result.success
 
 
@@ -80,6 +78,36 @@ def test_tidy_kitchen_task_completable_manually():
     house.close("cabinet")
     house.use("kettle")  # turn it back off
     assert TASKS["tidy_kitchen"]["success"](house)
+
+
+def test_fallback_planner_returns_valid_actions_against_real_house():
+    """The fallback planner is imported and relied on as the safety net in
+    agent/graph.py whenever the LLM planner fails - if IT has a bug, the
+    entire fallback path silently crashes instead of saving a demo. Verified
+    here directly, without LLM/Cognee, against a real house."""
+    from agent.fallback_planner import FallbackPlanner
+    from agent.schemas import AgentAction
+
+    house = build_house()
+    planner = FallbackPlanner()
+    for _ in range(30):
+        action = planner.next_action(house, TASKS["make_coffee"]["description"])
+        assert isinstance(action, AgentAction)
+        assert action.type in ("move", "open", "close", "pick", "place", "use", "done")
+        if action.type == "done":
+            break
+        if action.type == "move":
+            result = house.move(action.target)
+        elif action.type == "open":
+            result = house.open(action.target)
+        elif action.type == "pick":
+            result = house.pick(action.target)
+        elif action.type == "use":
+            result = house.use(action.target)
+        else:
+            continue
+        assert result.success or not result.success  # never raises - the real assertion is no exception above
+    assert TASKS["make_coffee"]["success"](house)
 
 
 if __name__ == "__main__":
