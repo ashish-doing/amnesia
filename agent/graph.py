@@ -75,8 +75,10 @@ async def run_session(
 
     for step in range(MAX_STEPS):
         # --- perceive ---
+        p = house.perceive()
         perception_text = house.perceive_text()
-        emit({"type": "perceive", "room": house.agent_room, "step": step})
+        emit({"type": "perceive", "room": house.agent_room, "step": step,
+              "visible_objects": p["visible_objects"], "connects_to": p["connects_to"]})
 
         # --- recall (cached per room within this session - a room's facts don't
         # change between two consecutive actions taken inside it, so re-querying

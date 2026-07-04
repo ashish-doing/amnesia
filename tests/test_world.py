@@ -66,6 +66,22 @@ def test_drift_moves_object():
     assert "keys" in house.rooms["bedroom"].objects
 
 
+def test_tidy_kitchen_task_completable_manually():
+    house = build_house()
+    house.move("kitchen")
+    house.open("cabinet")
+    house.pick("mug")
+    house.pick("coffee")
+    house.pick("sugar")
+    house.use("kettle")  # turn it on first, as if coffee was just made
+    house.place("mug", "cabinet")
+    house.place("coffee", "cabinet")
+    house.place("sugar", "cabinet")
+    house.close("cabinet")
+    house.use("kettle")  # turn it back off
+    assert TASKS["tidy_kitchen"]["success"](house)
+
+
 if __name__ == "__main__":
     # allow `python tests/test_world.py` without pytest installed
     import traceback

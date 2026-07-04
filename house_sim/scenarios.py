@@ -69,6 +69,15 @@ TASKS = {
         "description": "Find the keys and bring them to the hallway.",
         "success": lambda house: "keys" in house.inventory + house.rooms["hallway"].objects,
     },
+    "tidy_kitchen": {
+        "description": "Tidy up the kitchen after making coffee: put the mug, coffee, and sugar "
+                        "back in the cabinet, close the cabinet, and turn the kettle off.",
+        "success": lambda house: (
+            all(item in house.objects["cabinet"].contains for item in ("mug", "coffee", "sugar"))
+            and not house.objects["cabinet"].is_open
+            and not house.objects["kettle"].state.get("on", False)
+        ),
+    },
 }
 
 
