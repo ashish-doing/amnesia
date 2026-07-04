@@ -89,11 +89,15 @@ async def recall_context(query: str, current_session: int = 0) -> str:
 
 def improve_from_outcome(fact_id: str, was_correct: bool, session: int):
     """Reweight a fact's confidence based on whether acting on it worked out.
-    This is memify's actual intended purpose — adapting weights from feedback —
-    not a cosmetic pass over the graph."""
+    This is memify's actual intended purpose - adapting weights from feedback -
+    not a cosmetic pass over the graph.
+
+    NOTE: initializes the entry if it doesn't exist yet, since remember_observation()
+    (which used to create entries) is now batched to session-end for cost reasons -
+    per-action corrections need to work independently of when the batched write lands."""
     store = _load_confidence()
     if fact_id not in store:
-        return
+        store[fact_id] = {"confidence": 0.5, "last_confirmed_session": session, "text": fact_id}
     if was_correct:
         store[fact_id]["confidence"] = min(1.0, store[fact_id]["confidence"] + 0.2)
         store[fact_id]["last_confirmed_session"] = session

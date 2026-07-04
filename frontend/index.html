@@ -273,7 +273,8 @@ function renderCompareChart() {
     const barHeight = Math.max(18, (s.steps / maxSteps) * 100);
     col.innerHTML = '<div class="bar ' + (s.mode === "cold" ? "cold" : "") + '" style="height:' + barHeight + 'px;">' +
       '<div class="bar-count">' + s.steps + '</div></div>' +
-      '<div class="bar-label">session ' + s.n + '<br>' + s.mode + '</div>';
+      '<div class="bar-label">session ' + s.n + '<br>' + s.mode +
+      (s.graphSize !== undefined ? '<br><span style="color:var(--accent)">' + s.graphSize + ' facts</span>' : '') + '</div>';
     chart.appendChild(col);
   });
 }
@@ -283,6 +284,10 @@ async function fetchMemoryGraph() {
     const res = await fetch("http://" + (location.hostname || "localhost") + ":8060/memory/graph");
     const data = await res.json();
     renderMemoryGraph(data.nodes);
+    if (sessionHistory.length > 0) {
+      sessionHistory[sessionHistory.length - 1].graphSize = data.count;
+      renderCompareChart();
+    }
   } catch (e) {
     console.error("memory graph fetch failed", e);
   }
