@@ -15,16 +15,15 @@
 </p>
 
 <p align="center">
-  <strong>WeMakeDevs × Cognee — "The Hangover Part AI: Where's My Context?" — June 29 – July 5, 2026</strong><br/>
+  <strong>WeMakeDevs × Cognee — "The Hangover Part AI: Where's My Context?" — 2026</strong><br/>
   <strong>Track: Best Use of Open Source Cognee</strong>
 </p>
 
 <p align="center">
-  📐 <a href="#architecture">Architecture</a> &nbsp;•&nbsp;
+  📐 <a href="./ARCHITECTURE.md">Architecture</a> &nbsp;•&nbsp;
   🧠 <a href="#the-memory-lifecycle-doing-real-work">Memory Lifecycle</a> &nbsp;•&nbsp;
   ⚡ <a href="#setup">Setup</a> &nbsp;•&nbsp;
-  🧪 <a href="#tests">Tests</a> &nbsp;•&nbsp;
-  🔗 <a href="https://github.com/ashish-doing/amnesia">GitHub</a>
+  🧪 <a href="#tests">Tests</a> &nbsp;•&nbsp; 
 </p>
 
 ---
@@ -120,6 +119,8 @@ and fixed during development, not designed in from the start.
 **Ordering guarantee:** the WebSocket layer uses a single-consumer event queue (`server/main.py`),
 not fire-and-forget `asyncio.create_task()` calls — an earlier version had a real race condition
 where rapid events could arrive at the browser out of order. Fixed and not re-introduced.
+
+📐 **Full system diagrams, sequence flows, and component breakdown:** [`ARCHITECTURE.md`](./ARCHITECTURE.md)
 
 ---
 
@@ -252,6 +253,7 @@ pure confidence-tracking logic can be tested without Cognee installed at all.
 
 ## Project structure
 
+```
 amnesia/
 ├── house_sim/
 │   ├── world.py            Core simulation: rooms, objects, containers, action API
@@ -275,7 +277,10 @@ amnesia/
 │   ├── test_world.py       9 simulation + fallback-planner tests
 │   └── test_memory_ops.py  7 zero-Cognee-dependency confidence-tracking tests
 ├── SUBMISSION.md            Claims audit + timed demo script
+├── ARCHITECTURE.md          Full system diagrams, sequence flows, component breakdown
+├── LICENSE                  MIT
 └── requirements.txt
+```
 
 ---
 
@@ -297,4 +302,16 @@ and this README. Disclose this explicitly in the submission form.
 
 ## License
 
-MIT
+[MIT](LICENSE)
+
+---
+
+<div align="center">
+
+Built for **WeMakeDevs × Cognee — "The Hangover Part AI: Where's My Context?" — 2026**
+
+*Powered by Cognee · LangGraph · Groq · FastAPI · D3.js*
+
+*Some agents forget everything when they wake up. This one doesn't have to.*
+
+</div>
