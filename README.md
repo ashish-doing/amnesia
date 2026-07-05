@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=Syne&weight=800&size=24&duration=3000&pause=1000&color=00E5FF&center=true&vCenter=true&width=1200&lines=Amnesia+%E2%80%94+An+Embodied+Agent+That+Stops+Re-Exploring;Session+1%3A+cold+and+blind.+Session+2%3A+remembered.;recall()+%C2%B7+remember()+%C2%B7+improve()+%C2%B7+forget()+%E2%80%94+all+four%2C+for+real;Built+for+The+Hangover+Part+AI%3A+Where%27s+My+Context%3F+(Cognee+%C3%97+WeMakeDevs)" alt="Amnesia" />
+<img src="https://readme-typing-svg.demolab.com?font=Syne&weight=800&size=22&duration=3000&pause=1000&color=00E5FF&center=true&vCenter=true&width=1500&lines=Amnesia+%E2%80%94+An+Embodied+Agent+That+Stops+Re-Exploring;Session+1%3A+cold+and+blind.+Session+2%3A+remembered.;recall()+%C2%B7+remember()+%C2%B7+improve()+%C2%B7+forget()+%E2%80%94+all+four%2C+for+real;WeMakeDevs+%C3%97+Cognee+%E2%80%94+The+Hangover+Part+AI" alt="Amnesia" />
 
 </div>
 
