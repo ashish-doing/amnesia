@@ -22,6 +22,7 @@
 <p align="center">
   🌐 <a href="https://ashish-doing.github.io/amnesia">Live Page</a> &nbsp;•&nbsp;
   📐 <a href="./ARCHITECTURE.md">Architecture</a> &nbsp;•&nbsp;
+  🎬 <a href="https://youtu.be/ZJb_0KcrFuo">Demo Video</a> &nbsp;•&nbsp;
   🧠 <a href="#the-memory-lifecycle-doing-real-work">Memory Lifecycle</a> &nbsp;•&nbsp;
   ⚡ <a href="#setup">Setup</a> &nbsp;•&nbsp;
   🧪 <a href="#tests">Tests</a>
@@ -37,8 +38,21 @@ partial observability, a real action API (`move`, `open`, `pick`, `place`, `use`
 things and complete real household tasks. The only thing that makes it faster across sessions is
 what Cognee's memory lifecycle lets it remember.
 
-**Demo video:** `[ADD YOUTUBE/DRIVE LINK HERE BEFORE SUBMITTING]`
+**Demo video:** https://youtu.be/ZJb_0KcrFuo
 **Live demo:** none — deliberately local-only (see [Known Limitations](#known-limitations))
+
+---
+
+## Demo
+
+[![Amnesia Landing Page](https://img.shields.io/badge/🌐%20View-Landing%20Page-9D8CFF?style=for-the-badge)](https://ashish-doing.github.io/amnesia)
+· No hosted app — deliberately local-only, see [Known Limitations](#known-limitations).
+
+[![Amnesia Demo](https://img.youtube.com/vi/ZJb_0KcrFuo/maxresdefault.jpg)](https://youtu.be/ZJb_0KcrFuo)
+
+▶️ [Watch the 3-minute demo on YouTube](https://youtu.be/ZJb_0KcrFuo)
+
+- 3-minute walkthrough — session 1 cold-starting blind, then the same house in session 2 with Cognee's memory carried over.
 
 ---
 
@@ -190,7 +204,6 @@ Everything here is sourced from real backend state, not mocked for the demo:
 - **`forget()`'s Cognee-side graph pruning is best-effort, not guaranteed** — the local confidence
   store removal always succeeds; the underlying Cognee graph-node deletion depends on the installed
   version's API surface and its real outcome is returned as an auditable dict, not assumed.
-- **No demo video is embedded in this README yet** — record and add it before submitting; screenshots of the deployed landing page are included above.
 
 ---
 
