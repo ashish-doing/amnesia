@@ -65,6 +65,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 .hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:56px}
 .btn-primary{background:var(--violet);color:#0a0714;font-family:var(--ui);font-weight:700;font-size:14px;padding:13px 28px;border-radius:9px;text-decoration:none;display:flex;align-items:center;gap:8px;transition:transform .15s,box-shadow .15s;box-shadow:0 4px 26px rgba(157,140,255,0.28)}
 .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(157,140,255,0.4)}
+.btn-demo{background:var(--red);color:#fff;font-family:var(--ui);font-weight:700;font-size:14px;padding:13px 28px;border-radius:9px;text-decoration:none;display:flex;align-items:center;gap:8px;transition:transform .15s,box-shadow .15s;box-shadow:0 4px 26px rgba(245,86,106,0.28)}
+.btn-demo:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(245,86,106,0.4)}
 .btn-secondary{background:rgba(255,255,255,0.03);color:var(--text);font-family:var(--ui);font-weight:500;font-size:14px;padding:13px 26px;border-radius:9px;text-decoration:none;border:1px solid var(--border2);display:flex;align-items:center;gap:8px;transition:background .15s,border-color .15s}
 .btn-secondary:hover{background:rgba(255,255,255,0.07);border-color:rgba(255,255,255,0.22)}
 
@@ -169,7 +171,7 @@ section{padding:100px 40px}
 .lim-card p{font-size:13px;color:var(--dim2);line-height:1.65}
 .lim-card p strong{color:var(--text);font-weight:500}
 
-/* ── TERMINAL (real commands, replaces a live demo) ── */
+/* ── TERMINAL (real commands) ── */
 .term-wrap{margin-top:48px;background:#050508;border:1px solid var(--border2);border-radius:14px;overflow:hidden;font-family:var(--mono);font-size:12.5px}
 .term-bar{background:rgba(157,140,255,0.04);border-bottom:1px solid var(--border);padding:11px 16px;display:flex;align-items:center;gap:8px}
 .term-dot{width:10px;height:10px;border-radius:50%}
@@ -180,6 +182,15 @@ section{padding:100px 40px}
 .t-w{color:var(--text)}.t-d{color:var(--dim2)}.t-a{color:var(--amber)}.t-r{color:var(--red)}
 .no-demo-note{display:flex;align-items:center;gap:10px;margin-top:16px;font-family:var(--mono);font-size:11.5px;color:var(--dim);flex-wrap:wrap}
 .no-demo-note .tag{background:rgba(245,86,106,0.07);border:1px solid rgba(245,86,106,0.18);color:var(--red);border-radius:5px;padding:3px 10px}
+
+/* ── DEMO VIDEO CARD ── */
+.demo-video-card{display:block;margin-top:28px;border-radius:14px;overflow:hidden;border:1px solid var(--border2);position:relative;transition:border-color .2s,transform .2s}
+.demo-video-card:hover{transform:translateY(-2px);border-color:var(--violet-border)}
+.demo-video-card img{width:100%;display:block}
+.demo-watch-note{display:flex;align-items:center;gap:10px;margin-top:16px;font-family:var(--mono);font-size:11.5px;color:var(--dim);flex-wrap:wrap}
+.demo-watch-note .tag{background:rgba(63,232,209,0.08);border:1px solid rgba(63,232,209,0.2);color:var(--cyan);border-radius:5px;padding:3px 10px}
+.demo-watch-note a{color:var(--cyan);text-decoration:none}
+.demo-watch-note a:hover{text-decoration:underline}
 
 /* ── TECH STACK ── */
 .tech-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-top:48px}
@@ -249,6 +260,7 @@ footer{border-top:1px solid var(--border);padding:26px 56px;display:flex;align-i
 
     <div class="hero-btns">
       <a href="https://github.com/ashish-doing/amnesia" target="_blank" class="btn-primary">⭐ View on GitHub</a>
+      <a href="https://youtu.be/ZJb_0KcrFuo" target="_blank" class="btn-demo">🎬 Watch Demo</a>
       <a href="#problem" class="btn-secondary">See it forget vs remember ↓</a>
       <a href="https://github.com/ashish-doing/amnesia/blob/main/ARCHITECTURE.md" target="_blank" class="btn-secondary">📐 Architecture</a>
     </div>
@@ -332,10 +344,6 @@ footer{border-top:1px solid var(--border);padding:26px 56px;display:flex;align-i
           <div class="sbar" style="height:42%;background:linear-gradient(180deg,var(--violet),rgba(157,140,255,0.2))"></div>
           <span class="sbar-label"><b>Session 5</b>tidy_kitchen · a different goal</span>
         </div>
-      </div>
-      <div class="no-demo-note">
-        <span class="tag">honest note</span>
-        <span>Session 4 (make_tea) works because recall() generalizes over the same kitchen facts, not because it was ever explicitly taught tea. Session 5 (tidy_kitchen) only demonstrates real cleanup behavior as a follow-up to a same-house make_coffee run — on a fresh house the task starts pre-satisfied.</span>
       </div>
     </div>
   </div>
@@ -438,13 +446,13 @@ footer{border-top:1px solid var(--border);padding:26px 56px;display:flex;align-i
 
 <div class="divider"></div>
 
-<!-- ═══ NO LIVE DEMO — TERMINAL INSTEAD ═══ -->
+<!-- ═══ NO LIVE DEMO — TERMINAL + REAL VIDEO ═══ -->
 <section id="run">
   <div class="section-inner">
     <div class="fade-up">
       <div class="section-label">Try it yourself</div>
       <h2 class="section-title">No hosted link — and that's deliberate</h2>
-      <p class="section-sub">Cognee's memory lives in local SQLite + LanceDB + Ladybug files. Free hosting tiers have ephemeral filesystems that wipe on redeploy or sleep — which would silently break the entire "memory persists across sessions" premise this project exists to demonstrate. So it runs locally, and a demo video stands in for a hosted link.</p>
+      <p class="section-sub">Cognee's memory lives in local SQLite + LanceDB + Ladybug files. Free hosting tiers have ephemeral filesystems that wipe on redeploy or sleep — which would silently break the entire "memory persists across sessions" premise this project exists to demonstrate. So it runs locally, and the demo video below stands in for a hosted link.</p>
     </div>
 
     <div class="term-wrap fade-up">
@@ -471,9 +479,12 @@ footer{border-top:1px solid var(--border);padding:26px 56px;display:flex;align-i
       </div>
     </div>
 
-    <div class="no-demo-note">
-      <span class="tag">status</span>
-      <span>Demo video link goes here once recorded — <code style="color:var(--dim2)">[ADD LINK BEFORE SHARING]</code>. Repo README carries the same placeholder.</span>
+    <a href="https://youtu.be/ZJb_0KcrFuo" target="_blank" class="demo-video-card fade-up">
+      <img src="https://img.youtube.com/vi/ZJb_0KcrFuo/maxresdefault.jpg" alt="Amnesia demo video">
+    </a>
+    <div class="demo-watch-note fade-up">
+      <span class="tag">▶ watch</span>
+      <span><a href="https://youtu.be/ZJb_0KcrFuo" target="_blank">Watch the 3-minute demo on YouTube →</a></span>
     </div>
   </div>
 </section>
