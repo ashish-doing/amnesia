@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=Syne&weight=800&size=22&duration=3000&pause=1000&color=00E5FF&center=true&vCenter=true&width=1500&lines=Amnesia+%E2%80%94+An+Embodied+Agent+That+Stops+Re-Exploring;Session+1%3A+cold+and+blind.+Session+2%3A+remembered.;recall()+%C2%B7+remember()+%C2%B7+improve()+%C2%B7+forget()+%E2%80%94+all+four%2C+for+real;WeMakeDevs+%C3%97+Cognee+%E2%80%94+The+Hangover+Part+AI" alt="Amnesia" />
+<img src="https://readme-typing-svg.demolab.com?font=Syne&weight=800&size=30&duration=3000&pause=1000&color=00E5FF&center=true&vCenter=true&width=1600&height=70&lines=Amnesia+%E2%80%94+An+Embodied+Agent+That+Stops+Re-Exploring;Session+1%3A+cold+and+blind.+Session+2%3A+remembered.;recall()+%C2%B7+remember()+%C2%B7+improve()+%C2%B7+forget()+%E2%80%94+all+four%2C+for+real;WeMakeDevs+%C3%97+Cognee+%E2%80%94+The+Hangover+Part+AI" alt="Amnesia" />
 
 </div>
 
@@ -20,10 +20,11 @@
 </p>
 
 <p align="center">
+  🌐 <a href="https://ashish-doing.github.io/amnesia">Live Page</a> &nbsp;•&nbsp;
   📐 <a href="./ARCHITECTURE.md">Architecture</a> &nbsp;•&nbsp;
   🧠 <a href="#the-memory-lifecycle-doing-real-work">Memory Lifecycle</a> &nbsp;•&nbsp;
   ⚡ <a href="#setup">Setup</a> &nbsp;•&nbsp;
-  🧪 <a href="#tests">Tests</a> &nbsp;•&nbsp; 
+  🧪 <a href="#tests">Tests</a>
 </p>
 
 ---
@@ -38,6 +39,30 @@ what Cognee's memory lifecycle lets it remember.
 
 **Demo video:** `[ADD YOUTUBE/DRIVE LINK HERE BEFORE SUBMITTING]`
 **Live demo:** none — deliberately local-only (see [Known Limitations](#known-limitations))
+
+---
+
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/hero.png" width="800" alt="Amnesia landing page hero"/>
+  <br/><sub>The landing page, deployed via GitHub Pages from <code>docs/index.html</code>.</sub>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/cold-vs-memory.png" width="800" alt="Cold start vs memory comparison"/>
+  <br/><sub>The core claim, side by side: session 1 cold-starts at ~8–13 actions, session 2 with memory drops to ~5–6.</sub>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/lifecycle-architecture.png" width="800" alt="Memory lifecycle and architecture sections"/>
+  <br/><sub>All four Cognee lifecycle calls, and the real 6-node LangGraph StateGraph.</sub>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/limitations-stack.png" width="800" alt="Limitations and tech stack sections"/>
+  <br/><sub>Limitations stated up front, plus the full tech stack.</sub>
+</p>
 
 ---
 
@@ -165,7 +190,7 @@ Everything here is sourced from real backend state, not mocked for the demo:
 - **`forget()`'s Cognee-side graph pruning is best-effort, not guaranteed** — the local confidence
   store removal always succeeds; the underlying Cognee graph-node deletion depends on the installed
   version's API surface and its real outcome is returned as an auditable dict, not assumed.
-- **No screenshots or demo video are embedded in this README yet** — add them before submitting.
+- **No demo video is embedded in this README yet** — record and add it before submitting; screenshots of the deployed landing page are included above.
 
 ---
 
@@ -276,7 +301,9 @@ amnesia/
 ├── tests/
 │   ├── test_world.py       9 simulation + fallback-planner tests
 │   └── test_memory_ops.py  7 zero-Cognee-dependency confidence-tracking tests
-├── SUBMISSION.md            Claims audit + timed demo script
+├── docs/
+│   ├── index.html          GitHub Pages landing page (ashish-doing.github.io/amnesia)
+│   └── screenshots/        Landing page screenshots referenced in this README
 ├── ARCHITECTURE.md          Full system diagrams, sequence flows, component breakdown
 ├── LICENSE                  MIT
 └── requirements.txt
@@ -302,7 +329,7 @@ and this README. Disclose this explicitly in the submission form.
 
 ## License
 
-[MIT](LICENSE)
+MIT — see [LICENSE](LICENSE) for details.
 
 ---
 
