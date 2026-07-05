@@ -19,6 +19,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from house_sim.scenarios import build_house, apply_standard_drift, TASKS
 from agent.graph import run_session
 
