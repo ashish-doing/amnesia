@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amnesia — An Embodied Agent That Stops Re-Exploring</title>
+<meta name="description" content="Amnesia is an embodied task-planning agent that uses Cognee's memory lifecycle — remember, recall, improve, forget — to stop re-exploring a house it has already learned. Built for WeMakeDevs × Cognee 2026.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07070b;
+  --s1:#0c0c13;
+  --s2:#10101a;
+  --border:rgba(255,255,255,0.07);
+  --border2:rgba(255,255,255,0.13);
+  --violet:#9d8cff;
+  --violet-dim:rgba(157,140,255,0.09);
+  --violet-border:rgba(157,140,255,0.28);
+  --cyan:#3fe8d1;
+  --amber:#f0ad3d;
+  --red:#f5566a;
+  --text:#eef0f7;
+  --dim:#6b7488;
+  --dim2:#8d95a8;
+  --dim3:#454c5e;
+  --ui:'Sora',system-ui,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --body:'Inter',system-ui,sans-serif;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;line-height:1.6;font-weight:300}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 56px;height:62px;background:rgba(7,7,11,0.82);border-bottom:1px solid var(--border);backdrop-filter:blur(16px)}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-logo-mark{width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan);animation:breathe 3.2s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
+.nav-logo-name{font-family:var(--ui);font-size:16px;font-weight:700;color:var(--text);letter-spacing:-0.2px}
+.nav-links{display:flex;align-items:center;gap:30px}
+.nav-links a{font-size:12.5px;font-family:var(--mono);color:var(--dim2);text-decoration:none;letter-spacing:.02em;transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{background:var(--violet);color:#0a0714;font-family:var(--ui);font-size:13px;font-weight:700;padding:8px 18px;border-radius:7px;text-decoration:none;transition:opacity .15s}
+.nav-cta:hover{opacity:.85}
+@media(max-width:860px){.nav-links{display:none}nav{padding:0 22px}}
+
+/* ── HERO ── */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:130px 24px 70px;position:relative;overflow:hidden}
+#hero-canvas{position:absolute;inset:0;z-index:0;opacity:.55}
+.hero::before{content:'';position:absolute;top:14%;left:50%;transform:translateX(-50%);width:720px;height:420px;border-radius:50%;background:radial-gradient(ellipse,rgba(157,140,255,0.08) 0%,transparent 70%);pointer-events:none;z-index:0}
+.hero-inner{position:relative;z-index:1;max-width:880px;width:100%}
+.hero-badge{display:inline-flex;align-items:center;gap:9px;background:var(--violet-dim);border:1px solid var(--violet-border);border-radius:100px;padding:6px 18px;font-family:var(--mono);font-size:11px;color:var(--violet);margin-bottom:34px;letter-spacing:.3px}
+.hero-badge-dot{width:6px;height:6px;border-radius:50%;background:var(--violet)}
+.hero h1{font-family:var(--ui);font-size:clamp(46px,8vw,88px);font-weight:800;line-height:0.98;letter-spacing:-2.5px;margin-bottom:6px;color:var(--text)}
+.hero h1 .fade{background:linear-gradient(90deg,var(--text) 0%,var(--dim3) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:17px;color:var(--dim2);line-height:1.8;max-width:600px;margin:26px auto 40px;font-weight:300}
+.hero-sub strong{color:var(--text);font-weight:500}
+.hero-sub code{font-family:var(--mono);font-size:14px;color:var(--cyan);background:rgba(63,232,209,0.07);padding:1px 6px;border-radius:4px}
+.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:56px}
+.btn-primary{background:var(--violet);color:#0a0714;font-family:var(--ui);font-weight:700;font-size:14px;padding:13px 28px;border-radius:9px;text-decoration:none;display:flex;align-items:center;gap:8px;transition:transform .15s,box-shadow .15s;box-shadow:0 4px 26px rgba(157,140,255,0.28)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(157,140,255,0.4)}
+.btn-secondary{background:rgba(255,255,255,0.03);color:var(--text);font-family:var(--ui);font-weight:500;font-size:14px;padding:13px 26px;border-radius:9px;text-decoration:none;border:1px solid var(--border2);display:flex;align-items:center;gap:8px;transition:background .15s,border-color .15s}
+.btn-secondary:hover{background:rgba(255,255,255,0.07);border-color:rgba(255,255,255,0.22)}
+
+.hero-stats{display:flex;gap:0;justify-content:center;background:var(--s1);border:1px solid var(--border);border-radius:16px;overflow:hidden;max-width:660px;margin:0 auto}
+.hero-stat{flex:1;padding:20px 14px;text-align:center;border-right:1px solid var(--border);transition:background .2s}
+.hero-stat:last-child{border-right:none}
+.hero-stat:hover{background:rgba(157,140,255,0.04)}
+.hero-stat-num{font-family:var(--mono);font-size:24px;font-weight:600;color:var(--text);line-height:1}
+.hero-stat-num.v{color:var(--violet)} .hero-stat-num.c{color:var(--cyan)} .hero-stat-num.a{color:var(--amber)}
+.hero-stat-label{font-size:10px;color:var(--dim3);margin-top:6px;letter-spacing:.4px;text-transform:uppercase;font-family:var(--mono)}
+
+/* ── SECTIONS ── */
+section{padding:100px 40px}
+.section-inner{max-width:1160px;margin:0 auto}
+.section-label{font-family:var(--mono);font-size:11px;color:var(--violet);text-transform:uppercase;letter-spacing:3px;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.section-label::before{content:'';width:22px;height:1px;background:var(--violet)}
+.section-title{font-family:var(--ui);font-size:clamp(30px,4vw,46px);font-weight:700;letter-spacing:-1px;line-height:1.15;margin-bottom:16px}
+.section-sub{font-size:15.5px;color:var(--dim2);max-width:560px;line-height:1.8;font-weight:300}
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent)}
+.fade-up{opacity:0;transform:translateY(26px);transition:opacity .6s ease,transform .6s ease}
+.fade-up.visible{opacity:1;transform:none}
+
+/* ── COLD vs MEMORY (before/after) ── */
+.cm-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:48px}
+@media(max-width:820px){.cm-grid{grid-template-columns:1fr}}
+.cm-card{border-radius:16px;padding:30px;position:relative;overflow:hidden}
+.cm-card.cold{background:rgba(245,86,106,0.035);border:1px solid rgba(245,86,106,0.16)}
+.cm-card.warm{background:rgba(63,232,209,0.03);border:1px solid rgba(63,232,209,0.16)}
+.cm-head{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+.cm-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px}
+.cold .cm-icon{background:rgba(245,86,106,0.1)}
+.warm .cm-icon{background:rgba(63,232,209,0.1)}
+.cm-label{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;padding:3px 10px;border-radius:4px}
+.cold .cm-label{color:var(--red);background:rgba(245,86,106,0.1)}
+.warm .cm-label{color:var(--cyan);background:rgba(63,232,209,0.1)}
+.cm-card h3{font-family:var(--ui);font-size:19px;font-weight:700;margin-bottom:18px}
+.cm-item{display:flex;gap:10px;font-size:13.5px;color:var(--dim2);margin-bottom:11px;line-height:1.6}
+.cm-dot{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;font-size:9px}
+.cold .cm-dot{background:rgba(245,86,106,0.12);color:var(--red)}
+.warm .cm-dot{background:rgba(63,232,209,0.12);color:var(--cyan)}
+.cm-bigstat{margin-top:20px;padding-top:18px;border-top:1px solid var(--border);display:flex;align-items:baseline;gap:10px}
+.cm-bigstat .n{font-family:var(--mono);font-size:34px;font-weight:600}
+.cold .cm-bigstat .n{color:var(--red)}
+.warm .cm-bigstat .n{color:var(--cyan)}
+.cm-bigstat .l{font-size:12px;color:var(--dim);font-family:var(--mono)}
+
+/* ── SESSION BARS (signature element) ── */
+.session-panel{margin-top:56px;background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:36px 40px}
+.session-panel-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:32px;flex-wrap:wrap;gap:10px}
+.session-panel-head h4{font-family:var(--ui);font-size:15px;font-weight:700}
+.session-panel-head span{font-family:var(--mono);font-size:11px;color:var(--dim)}
+.session-bars{display:flex;align-items:flex-end;gap:22px;height:180px;padding:0 4px}
+.sbar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:10px}
+.sbar{width:100%;max-width:64px;border-radius:6px 6px 3px 3px;position:relative;transition:transform .2s}
+.sbar:hover{transform:translateY(-3px)}
+.sbar-val{font-family:var(--mono);font-size:13px;color:var(--text);font-weight:600}
+.sbar-label{font-family:var(--mono);font-size:10px;color:var(--dim);text-align:center;line-height:1.5}
+.sbar-label b{color:var(--dim2);display:block;font-size:10.5px}
+
+/* ── LIFECYCLE CARDS ── */
+.life-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:48px}
+@media(max-width:960px){.life-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.life-grid{grid-template-columns:1fr}}
+.life-card{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:24px;transition:border-color .2s,transform .2s;border-top:2px solid transparent}
+.life-card:hover{transform:translateY(-3px)}
+.life-card.c1{border-top-color:var(--violet)}
+.life-card.c2{border-top-color:var(--cyan)}
+.life-card.c3{border-top-color:var(--amber)}
+.life-card.c4{border-top-color:var(--red)}
+.life-fn{font-family:var(--mono);font-size:13px;font-weight:700;margin-bottom:4px}
+.c1 .life-fn{color:var(--violet)} .c2 .life-fn{color:var(--cyan)} .c3 .life-fn{color:var(--amber)} .c4 .life-fn{color:var(--red)}
+.life-when{font-size:11px;color:var(--dim3);font-family:var(--mono);margin-bottom:14px;letter-spacing:.2px}
+.life-desc{font-size:13px;color:var(--dim2);line-height:1.65}
+
+/* ── ARCHITECTURE LOOP ── */
+.arch-loop{margin-top:52px;position:relative}
+.arch-nodes{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+@media(max-width:960px){.arch-nodes{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:560px){.arch-nodes{grid-template-columns:1fr 1fr}}
+.arch-node{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:20px 16px;text-align:center;position:relative;transition:border-color .2s}
+.arch-node:hover{border-color:var(--violet-border)}
+.arch-node-num{font-family:var(--mono);font-size:9px;color:var(--dim3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px}
+.arch-node-icon{font-size:20px;margin-bottom:8px}
+.arch-node-title{font-family:var(--ui);font-size:13.5px;font-weight:700;margin-bottom:6px}
+.arch-node-desc{font-size:10.5px;color:var(--dim);line-height:1.5}
+.arch-loop-note{display:flex;align-items:center;gap:10px;justify-content:center;margin-top:22px;font-family:var(--mono);font-size:11px;color:var(--dim);flex-wrap:wrap;text-align:center}
+.arch-loop-note .tag{background:var(--violet-dim);border:1px solid var(--violet-border);color:var(--violet);border-radius:5px;padding:3px 10px}
+
+/* ── ENGINEERING DECISIONS ── */
+.dec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:48px}
+@media(max-width:900px){.dec-grid{grid-template-columns:1fr}}
+.dec-card{background:var(--s1);border:1px solid var(--border);border-left:3px solid var(--violet);border-radius:0 12px 12px 0;padding:22px 24px}
+.dec-card h4{font-family:var(--ui);font-size:14.5px;font-weight:700;margin-bottom:10px}
+.dec-card p{font-size:12.8px;color:var(--dim2);line-height:1.7}
+.dec-card .found{display:inline-block;margin-top:12px;font-family:var(--mono);font-size:10px;color:var(--amber);background:rgba(240,173,61,0.08);border:1px solid rgba(240,173,61,0.18);border-radius:5px;padding:2px 9px;letter-spacing:.2px}
+
+/* ── LIMITATIONS (honest) ── */
+.lim-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:48px}
+@media(max-width:820px){.lim-grid{grid-template-columns:1fr}}
+.lim-card{background:rgba(245,86,106,0.025);border:1px solid rgba(245,86,106,0.14);border-radius:12px;padding:20px 22px;display:flex;gap:14px}
+.lim-mark{color:var(--red);font-family:var(--mono);font-size:13px;flex-shrink:0;margin-top:1px}
+.lim-card p{font-size:13px;color:var(--dim2);line-height:1.65}
+.lim-card p strong{color:var(--text);font-weight:500}
+
+/* ── TERMINAL (real commands, replaces a live demo) ── */
+.term-wrap{margin-top:48px;background:#050508;border:1px solid var(--border2);border-radius:14px;overflow:hidden;font-family:var(--mono);font-size:12.5px}
+.term-bar{background:rgba(157,140,255,0.04);border-bottom:1px solid var(--border);padding:11px 16px;display:flex;align-items:center;gap:8px}
+.term-dot{width:10px;height:10px;border-radius:50%}
+.td-r{background:#f5566a}.td-y{background:#f0ad3d}.td-g{background:#3fe8d1}
+.term-title{margin-left:8px;font-size:10px;color:var(--dim);letter-spacing:1px}
+.term-body{padding:24px 26px;line-height:2}
+.t-p{color:var(--dim3)}.t-c{color:var(--violet)}.t-co{color:#3a3f52}.t-g{color:var(--cyan)}
+.t-w{color:var(--text)}.t-d{color:var(--dim2)}.t-a{color:var(--amber)}.t-r{color:var(--red)}
+.no-demo-note{display:flex;align-items:center;gap:10px;margin-top:16px;font-family:var(--mono);font-size:11.5px;color:var(--dim);flex-wrap:wrap}
+.no-demo-note .tag{background:rgba(245,86,106,0.07);border:1px solid rgba(245,86,106,0.18);color:var(--red);border-radius:5px;padding:3px 10px}
+
+/* ── TECH STACK ── */
+.tech-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-top:48px}
+@media(max-width:820px){.tech-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.tech-grid{grid-template-columns:1fr}}
+.tech-cell{background:var(--s1);padding:24px 26px;transition:background .2s}
+.tech-cell:hover{background:var(--s2)}
+.tech-layer{font-family:var(--mono);font-size:10px;color:var(--violet);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px}
+.tech-name{font-family:var(--ui);font-size:15px;font-weight:700;margin-bottom:6px}
+.tech-detail{font-size:12px;color:var(--dim2);line-height:1.6}
+
+/* ── CTA ── */
+.cta-section{padding:90px 40px 110px;text-align:center;position:relative;overflow:hidden}
+.cta-section::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:600px;height:280px;border-radius:50%;background:radial-gradient(ellipse,rgba(157,140,255,0.07) 0%,transparent 70%);pointer-events:none}
+.cta-inner{max-width:600px;margin:0 auto;position:relative}
+.cta-inner h2{font-family:var(--ui);font-size:clamp(30px,4.2vw,48px);font-weight:800;letter-spacing:-1.3px;line-height:1.15;margin-bottom:16px}
+.cta-inner p{font-size:15px;color:var(--dim2);margin-bottom:32px;line-height:1.75}
+.cta-code{background:var(--s1);border:1px solid var(--border2);border-radius:10px;padding:16px 20px;font-family:var(--mono);font-size:12.5px;color:var(--dim2);text-align:left;margin-bottom:28px}
+.cta-code .cm{color:var(--dim3)}
+.cta-links{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;font-size:13px}
+.cta-links a{color:var(--dim2);text-decoration:none;display:flex;align-items:center;gap:5px;font-family:var(--ui);font-weight:500;transition:color .15s}
+.cta-links a:hover{color:var(--violet)}
+
+/* ── FOOTER ── */
+footer{border-top:1px solid var(--border);padding:26px 56px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.footer-left{font-family:var(--mono);font-size:10px;color:var(--dim3);letter-spacing:.3px}
+.footer-right{font-family:var(--mono);font-size:10px;color:var(--dim3);display:flex;gap:18px}
+.footer-right a{color:var(--dim3);text-decoration:none;transition:color .15s}
+.footer-right a:hover{color:var(--violet)}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">
+    <span class="nav-logo-mark"></span>
+    <span class="nav-logo-name">amnesia</span>
+  </a>
+  <div class="nav-links">
+    <a href="#problem">Cold vs Memory</a>
+    <a href="#lifecycle">Lifecycle</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#decisions">Decisions</a>
+    <a href="#limits">Limitations</a>
+  </div>
+  <a href="https://github.com/ashish-doing/amnesia" target="_blank" class="nav-cta">GitHub →</a>
+</nav>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-inner">
+    <div class="hero-badge">
+      <span class="hero-badge-dot"></span>
+      WeMakeDevs × Cognee 2026 — Best Use of Open Source Cognee
+    </div>
+
+    <h1>Amnesia<span class="fade"> forgets on purpose,</span><br><span class="fade">so it can prove memory works.</span></h1>
+
+    <p class="hero-sub">
+      An embodied task-planning agent in a simulated house. Session 1, it explores blind.
+      Session 2, same house, brand-new process — it doesn't. The only thing that changed
+      in between is <strong>Cognee's memory lifecycle</strong>: <code>remember()</code> ·
+      <code>recall()</code> · <code>improve()</code> · <code>forget()</code> — all four, doing real work.
+    </p>
+
+    <div class="hero-btns">
+      <a href="https://github.com/ashish-doing/amnesia" target="_blank" class="btn-primary">⭐ View on GitHub</a>
+      <a href="#problem" class="btn-secondary">See it forget vs remember ↓</a>
+      <a href="https://github.com/ashish-doing/amnesia/blob/main/ARCHITECTURE.md" target="_blank" class="btn-secondary">📐 Architecture</a>
+    </div>
+
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="hero-stat-num v">6</div><div class="hero-stat-label">Graph Nodes</div></div>
+      <div class="hero-stat"><div class="hero-stat-num c">4</div><div class="hero-stat-label">Lifecycle Calls</div></div>
+      <div class="hero-stat"><div class="hero-stat-num">16</div><div class="hero-stat-label">Tests Passing</div></div>
+      <div class="hero-stat"><div class="hero-stat-num a">2</div><div class="hero-stat-label">Groq Models</div></div>
+      <div class="hero-stat"><div class="hero-stat-num" style="color:var(--red)">0</div><div class="hero-stat-label">Hosted Servers</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ COLD vs MEMORY ═══ -->
+<section id="problem">
+  <div class="section-inner">
+    <div class="fade-up">
+      <div class="section-label">The core claim</div>
+      <h2 class="section-title">Same house.<br>Same task. Different agent.</h2>
+      <p class="section-sub">There's no physics engine and no real robot here — the value is entirely in whether memory changes behavior. So the whole project is built around one honest comparison, run twice, on purpose.</p>
+    </div>
+
+    <div class="cm-grid fade-up">
+      <div class="cm-card cold">
+        <div class="cm-head">
+          <div class="cm-icon">🌀</div>
+          <div class="cm-label">Session 1 · Cold start</div>
+        </div>
+        <h3>It has to find everything</h3>
+        <div class="cm-item"><div class="cm-dot">✕</div><span>No prior facts about the house — every room is unopened territory</span></div>
+        <div class="cm-item"><div class="cm-dot">✕</div><span>Opens cabinets and containers one by one to locate the mug, coffee, kettle</span></div>
+        <div class="cm-item"><div class="cm-dot">✕</div><span><code style="color:var(--red)">recall()</code> returns nothing useful — there's nothing in memory yet</span></div>
+        <div class="cm-item"><div class="cm-dot">✕</div><span>Every action is genuine exploration, not retrieval</span></div>
+        <div class="cm-bigstat"><span class="n">~8–13</span><span class="l">actions to make_coffee</span></div>
+      </div>
+      <div class="cm-card warm">
+        <div class="cm-head">
+          <div class="cm-icon">◎</div>
+          <div class="cm-label">Session 2 · With memory</div>
+        </div>
+        <h3>It already knows the kitchen</h3>
+        <div class="cm-item"><div class="cm-dot">✓</div><span>Brand-new process, same house instance — no in-memory state carried over</span></div>
+        <div class="cm-item"><div class="cm-dot">✓</div><span>Only Cognee's persisted graph survives the restart</span></div>
+        <div class="cm-item"><div class="cm-dot">✓</div><span><code style="color:var(--cyan)">recall()</code> returns real, verbatim facts from session 1 — shown live, not summarized</span></div>
+        <div class="cm-item"><div class="cm-dot">✓</div><span>Goes near-straight to mug → kettle → coffee instead of searching</span></div>
+        <div class="cm-bigstat"><span class="n">~5–6</span><span class="l">actions to make_coffee</span></div>
+      </div>
+    </div>
+
+    <div class="session-panel fade-up">
+      <div class="session-panel-head">
+        <h4>Steps taken, per session</h4>
+        <span>real steps_taken returned by the backend — reproduce with `Run full demo`</span>
+      </div>
+      <div class="session-bars">
+        <div class="sbar-col">
+          <span class="sbar-val">~11</span>
+          <div class="sbar" style="height:100%;background:linear-gradient(180deg,var(--red),rgba(245,86,106,0.25))"></div>
+          <span class="sbar-label"><b>Session 1</b>make_coffee · cold</span>
+        </div>
+        <div class="sbar-col">
+          <span class="sbar-val">~6</span>
+          <div class="sbar" style="height:55%;background:linear-gradient(180deg,var(--cyan),rgba(63,232,209,0.25))"></div>
+          <span class="sbar-label"><b>Session 2</b>make_coffee · memory</span>
+        </div>
+        <div class="sbar-col">
+          <span class="sbar-val">+1 correction</span>
+          <div class="sbar" style="height:62%;background:linear-gradient(180deg,var(--amber),rgba(240,173,61,0.25))"></div>
+          <span class="sbar-label"><b>Session 3</b>world drift · self-corrects</span>
+        </div>
+        <div class="sbar-col">
+          <span class="sbar-val">low</span>
+          <div class="sbar" style="height:48%;background:linear-gradient(180deg,var(--violet),rgba(157,140,255,0.25))"></div>
+          <span class="sbar-label"><b>Session 4</b>make_tea · never trained on this task</span>
+        </div>
+        <div class="sbar-col">
+          <span class="sbar-val">low</span>
+          <div class="sbar" style="height:42%;background:linear-gradient(180deg,var(--violet),rgba(157,140,255,0.2))"></div>
+          <span class="sbar-label"><b>Session 5</b>tidy_kitchen · a different goal</span>
+        </div>
+      </div>
+      <div class="no-demo-note">
+        <span class="tag">honest note</span>
+        <span>Session 4 (make_tea) works because recall() generalizes over the same kitchen facts, not because it was ever explicitly taught tea. Session 5 (tidy_kitchen) only demonstrates real cleanup behavior as a follow-up to a same-house make_coffee run — on a fresh house the task starts pre-satisfied.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ LIFECYCLE ═══ -->
+<section id="lifecycle">
+  <div class="section-inner">
+    <div class="fade-up">
+      <div class="section-label">Cognee, doing real work</div>
+      <h2 class="section-title">Four calls. None of them decorative.</h2>
+      <p class="section-sub">Every fact carries a confidence score — reinforced on success, penalized on failure, visualized directly as node color in the live memory graph: cyan is trusted, amber is decaying, red is stale.</p>
+    </div>
+
+    <div class="life-grid fade-up">
+      <div class="life-card c1">
+        <div class="life-fn">remember()</div>
+        <div class="life-when">Once per session · session-end, batched</div>
+        <div class="life-desc">Writes all of that session's observations to Cognee in a single <code style="color:var(--violet)">add()</code> + <code style="color:var(--violet)">cognify()</code> pass — not after every action. That's a fix, not the original design (see Decisions below).</div>
+      </div>
+      <div class="life-card c2">
+        <div class="life-fn">recall()</div>
+        <div class="life-when">Before every planning step · cached per room</div>
+        <div class="life-desc">The real text Cognee returns is shown live in the UI, unsummarized. In fallback mode (no API key), this node is skipped entirely — the deterministic planner doesn't need it.</div>
+      </div>
+      <div class="life-card c3">
+        <div class="life-fn">improve()</div>
+        <div class="life-when">After every action · based on real outcome</div>
+        <div class="life-desc">Confidence rises +0.2 (capped at 1.0) on success, falls −0.5 (floored at 0.0) on failure. Unit-tested directly in <code style="color:var(--amber)">tests/test_memory_ops.py</code> — 5 of the 7 tests there are this scoring logic alone.</div>
+      </div>
+      <div class="life-card c4">
+        <div class="life-fn">forget()</div>
+        <div class="life-when">On the drift-correction path only</div>
+        <div class="life-desc">Local confidence removal is guaranteed. The underlying Cognee graph-node prune is attempted, and its real success/failure is returned as an auditable dict — never silently assumed.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ ARCHITECTURE ═══ -->
+<section id="architecture">
+  <div class="section-inner">
+    <div class="fade-up">
+      <div class="section-label">Architecture</div>
+      <h2 class="section-title">A real, compiled LangGraph StateGraph</h2>
+      <p class="section-sub">Six nodes and one conditional loop-back edge — verified end-to-end with the deterministic fallback planner, no API keys required, before this was written down as a claim.</p>
+    </div>
+
+    <div class="arch-loop fade-up">
+      <div class="arch-nodes">
+        <div class="arch-node"><div class="arch-node-num">01</div><div class="arch-node-icon">👁</div><div class="arch-node-title">Perceive</div><div class="arch-node-desc">Reads house.perceive() — real room, objects, inventory</div></div>
+        <div class="arch-node"><div class="arch-node-num">02</div><div class="arch-node-icon">🧠</div><div class="arch-node-title">Recall</div><div class="arch-node-desc">Queries Cognee, cached per room; skipped in fallback mode</div></div>
+        <div class="arch-node"><div class="arch-node-num">03</div><div class="arch-node-icon">🗺</div><div class="arch-node-title">Plan</div><div class="arch-node-desc">Groq structured tool-call; falls back after 2 failed retries</div></div>
+        <div class="arch-node"><div class="arch-node-num">04</div><div class="arch-node-icon">⚙</div><div class="arch-node-title">Act</div><div class="arch-node-desc">Executes against the House, emits a real ActionResult</div></div>
+        <div class="arch-node"><div class="arch-node-num">05</div><div class="arch-node-icon">🩹</div><div class="arch-node-title">Correct</div><div class="arch-node-desc">improve()/forget() logic; always advances the step counter</div></div>
+        <div class="arch-node"><div class="arch-node-num">06</div><div class="arch-node-icon">🏁</div><div class="arch-node-title">Finalize</div><div class="arch-node-desc">One batched remember() call; emits session_end</div></div>
+      </div>
+      <div class="arch-loop-note">
+        <span class="tag">conditional edge</span>
+        <span>Correct loops back to Perceive until the task is done or 60 steps pass — then, and only then, advances to Finalize.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ DECISIONS ═══ -->
+<section id="decisions">
+  <div class="section-inner">
+    <div class="fade-up">
+      <div class="section-label">Engineering decisions</div>
+      <h2 class="section-title">Fixed after breaking, not designed in from day one</h2>
+      <p class="section-sub">Each of these came from watching the system fail during development — not from anticipating the failure in advance.</p>
+    </div>
+
+    <div class="dec-grid fade-up">
+      <div class="dec-card">
+        <h4>Two Groq models, not one</h4>
+        <p><code style="color:var(--violet)">llama-3.3-70b-versatile</code> plans (few, short calls). <code style="color:var(--violet)">llama-3.1-8b-instant</code> handles Cognee's internal extraction (frequent calls, no frontier reasoning needed) — on a separate 500K/day pool.</p>
+        <span class="found">found via: rate-limit exhaustion in dev</span>
+      </div>
+      <div class="dec-card">
+        <h4>remember() batched to session-end</h4>
+        <p>The first version called it after every action. <code style="color:var(--violet)">cognify()</code> re-resolves the whole graph and runs LLM extraction on every call — that burned the entire daily Groq budget in 2–3 sessions.</p>
+        <span class="found">found via: budget burned in 2–3 runs</span>
+      </div>
+      <div class="dec-card">
+        <h4>Ordered, single-consumer event queue</h4>
+        <p>An earlier version fired WebSocket events with plain <code style="color:var(--violet)">asyncio.create_task()</code> calls. Rapid events could arrive at the browser out of order — a real race condition, not a hypothetical one.</p>
+        <span class="found">found via: out-of-order UI events</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ NO LIVE DEMO — TERMINAL INSTEAD ═══ -->
+<section id="run">
+  <div class="section-inner">
+    <div class="fade-up">
+      <div class="section-label">Try it yourself</div>
+      <h2 class="section-title">No hosted link — and that's deliberate</h2>
+      <p class="section-sub">Cognee's memory lives in local SQLite + LanceDB + Ladybug files. Free hosting tiers have ephemeral filesystems that wipe on redeploy or sleep — which would silently break the entire "memory persists across sessions" premise this project exists to demonstrate. So it runs locally, and a demo video stands in for a hosted link.</p>
+    </div>
+
+    <div class="term-wrap fade-up">
+      <div class="term-bar">
+        <div class="term-dot td-r"></div><div class="term-dot td-y"></div><div class="term-dot td-g"></div>
+        <span class="term-title">amnesia — cold start, then memory</span>
+      </div>
+      <div class="term-body">
+        <div><span class="t-p">$ </span><span class="t-c">python scripts/run_session.py --task make_coffee --mode cold --session-number 1</span></div>
+        <div><span class="t-co"># no Cognee facts yet — agent explores room by room</span></div>
+        <div><span class="t-d">  perceive  </span><span class="t-w">kitchen</span><span class="t-co">  →  recall() : empty</span></div>
+        <div><span class="t-d">  act       </span><span class="t-w">open(cabinet_1)   </span><span class="t-r">miss</span></div>
+        <div><span class="t-d">  act       </span><span class="t-w">open(cabinet_2)   </span><span class="t-g">mug found</span></div>
+        <div><span class="t-g">✓ done in 11 actions · remember() → Cognee, once</span></div>
+        <div>&nbsp;</div>
+        <div><span class="t-p">$ </span><span class="t-c">python scripts/run_session.py --task make_coffee --mode memory --session-number 2</span></div>
+        <div><span class="t-co"># new process, same house — only Cognee's graph carried over</span></div>
+        <div><span class="t-d">  perceive  </span><span class="t-w">kitchen</span><span class="t-co">  →  recall() : "mug is in cabinet_2, coffee is on the counter..."</span></div>
+        <div><span class="t-d">  act       </span><span class="t-w">open(cabinet_2)   </span><span class="t-g">mug found — first try</span></div>
+        <div><span class="t-g">✓ done in 6 actions · improve() reinforced 4 facts</span></div>
+        <div>&nbsp;</div>
+        <div><span class="t-p">$ </span><span class="t-c">uvicorn server.main:app --reload --port 8060</span></div>
+        <div><span class="t-a">→ open frontend/index.html · click "Run full demo"</span></div>
+      </div>
+    </div>
+
+    <div class="no-demo-note">
+      <span class="tag">status</span>
+      <span>Demo video link goes here once recorded — <code style="color:var(--dim2)">[ADD LINK BEFORE SHARING]</code>. Repo README carries the same placeholder.</span>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ LIMITATIONS ═══ -->
+<section id="limits">
+  <div class="section-inner">
+    <div class="fade-up">
+      <div class="section-label">Stated plainly, not buried</div>
+      <h2 class="section-title">What this system doesn't do</h2>
+      <p class="section-sub">The honest version of a limitations section — not because a rubric asks for it, but because pretending otherwise would make the memory claim less believable, not more.</p>
+    </div>
+
+    <div class="lim-grid fade-up">
+      <div class="lim-card"><span class="lim-mark">—</span><p><strong>Symbolic simulation, not a physical robot.</strong> The perceive → recall → plan → act → correct → finalize graph is designed to port to a real controller; a short solo build window intentionally excluded physics and hardware risk.</p></div>
+      <div class="lim-card"><span class="lim-mark">—</span><p><strong>The LLM planner is the least deterministic part.</strong> Forced tool-calling schemas, pre-execution state validation, capped retries, and a fully unit-tested deterministic fallback planner all exist specifically to contain this.</p></div>
+      <div class="lim-card"><span class="lim-mark">—</span><p><strong>tidy_kitchen is contextual by design.</strong> It only meaningfully tests cleanup as a follow-up to a make_coffee session in the same house instance — on a fresh house, the task starts trivially satisfied.</p></div>
+      <div class="lim-card"><span class="lim-mark">—</span><p><strong>forget()'s Cognee-side prune is best-effort.</strong> Local confidence removal always succeeds; the underlying graph-node deletion depends on the installed Cognee version's API surface, and its real outcome is returned, not assumed.</p></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ TECH STACK ═══ -->
+<section id="stack">
+  <div class="section-inner">
+    <div class="fade-up">
+      <div class="section-label">Tech stack</div>
+      <h2 class="section-title">Every layer, and why it's there</h2>
+    </div>
+    <div class="tech-grid fade-up">
+      <div class="tech-cell"><div class="tech-layer">Simulation</div><div class="tech-name">Pure Python dataclasses</div><div class="tech-detail">Deterministic house/room/object model, partial observability, zero external deps.</div></div>
+      <div class="tech-cell"><div class="tech-layer">Orchestration</div><div class="tech-name">LangGraph StateGraph</div><div class="tech-detail">6 real nodes, 1 conditional loop-back edge, compiled once and reused.</div></div>
+      <div class="tech-cell"><div class="tech-layer">Planning</div><div class="tech-name">Groq llama-3.3-70b-versatile</div><div class="tech-detail">Forced tool-calling schema — the planner can't emit an invalid action shape.</div></div>
+      <div class="tech-cell"><div class="tech-layer">Fallback planning</div><div class="tech-name">Deterministic explorer</div><div class="tech-detail">Hand-rolled, no LLM, no network — unit-tested against a real house.</div></div>
+      <div class="tech-cell"><div class="tech-layer">Memory</div><div class="tech-name">Cognee 1.2.2</div><div class="tech-detail">SQLite + LanceDB + Ladybug — zero-setup local stack, remember/recall/improve/forget.</div></div>
+      <div class="tech-cell"><div class="tech-layer">Memory extraction</div><div class="tech-name">Groq llama-3.1-8b-instant</div><div class="tech-detail">Routed via LiteLLM's groq/ prefix — separate rate-limit pool from the planner.</div></div>
+      <div class="tech-cell"><div class="tech-layer">Embeddings</div><div class="tech-name">Fastembed</div><div class="tech-detail">BAAI/bge-small-en-v1.5, 384-dim, local, no API key required.</div></div>
+      <div class="tech-cell"><div class="tech-layer">Backend</div><div class="tech-name">FastAPI + WebSocket</div><div class="tech-detail">Ordered single-consumer event queue, /ask and /memory/graph endpoints.</div></div>
+      <div class="tech-cell"><div class="tech-layer">Frontend</div><div class="tech-name">Vanilla JS + D3.js</div><div class="tech-detail">Live map, force-directed memory graph, session comparison chart.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CTA ═══ -->
+<section class="cta-section">
+  <div class="cta-inner fade-up">
+    <h2>Run it. Break it. Watch it forget.</h2>
+    <p>Clone it, drop in a free Groq key, and run the day-1 path first — it proves the simulation itself is correct with zero AI dependencies.</p>
+    <div class="cta-code">
+      <div><span class="cm">$</span> git clone https://github.com/ashish-doing/amnesia</div>
+      <div><span class="cm">$</span> pip install -r requirements.txt</div>
+      <div><span class="cm">$</span> python tests/test_world.py &amp;&amp; python tests/test_memory_ops.py</div>
+    </div>
+    <div class="cta-links">
+      <a href="https://github.com/ashish-doing/amnesia" target="_blank">⭐ GitHub</a>
+      <a href="https://github.com/ashish-doing/amnesia/blob/main/ARCHITECTURE.md" target="_blank">📐 Architecture.md</a>
+      <a href="https://github.com/ashish-doing/amnesia/blob/main/SUBMISSION.md" target="_blank">📋 Submission.md</a>
+      <a href="https://linkedin.com/in/ashish-kumar-014aaa3b9" target="_blank">💼 LinkedIn</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer>
+  <div class="footer-left">Amnesia · WeMakeDevs × Cognee 2026 · MIT License</div>
+  <div class="footer-right">
+    <a href="https://github.com/ashish-doing/amnesia" target="_blank">GitHub</a>
+    <a href="https://github.com/ashish-doing" target="_blank">Author</a>
+    <a href="https://www.cognee.ai" target="_blank">Cognee</a>
+  </div>
+</footer>
+
+<script>
+// ── HERO CANVAS: memory nodes fading cyan → amber → red ──
+const canvas = document.getElementById('hero-canvas');
+const ctx = canvas.getContext('2d');
+let W, H;
+function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+resize();
+window.addEventListener('resize', resize);
+
+const palette = ['rgba(63,232,209,0.4)','rgba(240,173,61,0.35)','rgba(245,86,106,0.3)','rgba(157,140,255,0.35)'];
+const nodes = Array.from({length:46}, () => ({
+  x: Math.random()*window.innerWidth,
+  y: Math.random()*window.innerHeight*0.85,
+  r: Math.random()*1.6+0.6,
+  vx: (Math.random()-0.5)*0.14,
+  vy: (Math.random()-0.5)*0.14,
+  c: palette[Math.floor(Math.random()*palette.length)]
+}));
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  for(let i=0;i<nodes.length;i++){
+    for(let j=i+1;j<nodes.length;j++){
+      const dx=nodes[i].x-nodes[j].x, dy=nodes[i].y-nodes[j].y;
+      const d=Math.sqrt(dx*dx+dy*dy);
+      if(d<150){
+        ctx.beginPath();
+        ctx.strokeStyle=`rgba(157,140,255,${0.05*(1-d/150)})`;
+        ctx.lineWidth=0.5;
+        ctx.moveTo(nodes[i].x,nodes[i].y);
+        ctx.lineTo(nodes[j].x,nodes[j].y);
+        ctx.stroke();
+      }
+    }
+    ctx.beginPath();
+    ctx.arc(nodes[i].x,nodes[i].y,nodes[i].r,0,Math.PI*2);
+    ctx.fillStyle=nodes[i].c;
+    ctx.fill();
+    nodes[i].x+=nodes[i].vx; nodes[i].y+=nodes[i].vy;
+    if(nodes[i].x<0||nodes[i].x>W) nodes[i].vx*=-1;
+    if(nodes[i].y<0||nodes[i].y>H*0.85) nodes[i].vy*=-1;
+  }
+  requestAnimationFrame(draw);
+}
+draw();
+
+// ── SCROLL FADE-IN ──
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('visible'); });
+},{threshold:0.08});
+document.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
+</script>
+</body>
+</html>
