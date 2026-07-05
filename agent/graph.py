@@ -107,8 +107,12 @@ async def plan_node(state: AgentState) -> AgentState:
     house = state["house"]
     task = TASKS[state["task_name"]]
     if state["use_llm"]:
+        recent_history = "\n".join(state["session_observations"][-5:])
         try:
-            action = state["llm_planner"].next_action(house, task["description"], state["current_recall_ctx"])
+            action = state["llm_planner"].next_action(
+                house, task["description"], state["current_recall_ctx"],
+                recent_actions=recent_history,
+            )
         except state["planner_exhausted_cls"] as e:
             state["used_fallback_count"] += 1
             state["emit"]({"type": "planner_fallback", "reason": str(e)})

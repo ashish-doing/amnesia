@@ -35,7 +35,8 @@ class LLMPlanner:
         self.client = Groq(api_key=os.environ["GROQ_API_KEY"])
         self.model = model or os.environ.get("PLANNER_MODEL", "llama-3.3-70b-versatile")
 
-    def next_action(self, house: House, task_description: str, recall_context: str = "") -> AgentAction:
+    def next_action(self, house: House, task_description: str, recall_context: str = "",
+                     recent_actions: str = "") -> AgentAction:
         perception = house.perceive_text()
         retry_note = ""
         for attempt in range(MAX_RETRIES + 1):
@@ -46,6 +47,8 @@ class LLMPlanner:
                     f"CURRENT PERCEPTION:\n{perception}\n\n"
                     f"RECALLED MEMORY (may be stale, verify against perception):\n"
                     f"{recall_context or 'Nothing recalled yet.'}\n\n"
+                    f"YOUR OWN ACTIONS SO FAR THIS SESSION (do not repeat an action here that "
+                    f"didn't make progress):\n{recent_actions or 'None yet — this is your first action.'}\n\n"
                     f"{retry_note}"
                 )},
             ]
