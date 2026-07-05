@@ -60,6 +60,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 .hero-sub{font-size:17px;color:var(--dim2);line-height:1.8;max-width:600px;margin:26px auto 40px;font-weight:300}
 .hero-sub strong{color:var(--text);font-weight:500}
 .hero-sub code{font-family:var(--mono);font-size:14px;color:var(--cyan);background:rgba(63,232,209,0.07);padding:1px 6px;border-radius:4px}
+.lifecycle-line{display:block;margin-top:16px;white-space:nowrap;font-size:15px}
+@media(max-width:680px){.lifecycle-line{white-space:normal;font-size:14px}}
 .hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:56px}
 .btn-primary{background:var(--violet);color:#0a0714;font-family:var(--ui);font-weight:700;font-size:14px;padding:13px 28px;border-radius:9px;text-decoration:none;display:flex;align-items:center;gap:8px;transition:transform .15s,box-shadow .15s;box-shadow:0 4px 26px rgba(157,140,255,0.28)}
 .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(157,140,255,0.4)}
@@ -241,8 +243,8 @@ footer{border-top:1px solid var(--border);padding:26px 56px;display:flex;align-i
     <p class="hero-sub">
       An embodied task-planning agent in a simulated house. Session 1, it explores blind.
       Session 2, same house, brand-new process — it doesn't. The only thing that changed
-      in between is <strong>Cognee's memory lifecycle</strong>: <code>remember()</code> ·
-      <code>recall()</code> · <code>improve()</code> · <code>forget()</code> — all four, doing real work.
+      in between is <strong>Cognee's memory lifecycle</strong>.
+      <span class="lifecycle-line"><code>remember()</code> · <code>recall()</code> · <code>improve()</code> · <code>forget()</code> — all four, doing real work.</span>
     </p>
 
     <div class="hero-btns">
