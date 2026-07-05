@@ -38,9 +38,6 @@ partial observability, a real action API (`move`, `open`, `pick`, `place`, `use`
 things and complete real household tasks. The only thing that makes it faster across sessions is
 what Cognee's memory lifecycle lets it remember.
 
-**Demo video:** https://youtu.be/ZJb_0KcrFuo
-**Live demo:** none — deliberately local-only (see [Known Limitations](#known-limitations))
-
 ---
 
 ## Demo
@@ -48,11 +45,12 @@ what Cognee's memory lifecycle lets it remember.
 [![Amnesia Landing Page](https://img.shields.io/badge/🌐%20View-Landing%20Page-9D8CFF?style=for-the-badge)](https://ashish-doing.github.io/amnesia)
 · No hosted app — deliberately local-only, see [Known Limitations](#known-limitations).
 
+- 3-minute walkthrough — session 1 cold-starting blind, then the same house in session 2 with Cognee's memory carried over.
+
+
 [![Amnesia Demo](https://img.youtube.com/vi/ZJb_0KcrFuo/maxresdefault.jpg)](https://youtu.be/ZJb_0KcrFuo)
 
 ▶️ [Watch the 3-minute demo on YouTube](https://youtu.be/ZJb_0KcrFuo)
-
-- 3-minute walkthrough — session 1 cold-starting blind, then the same house in session 2 with Cognee's memory carried over.
 
 ---
 
